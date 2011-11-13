@@ -165,7 +165,6 @@ Lady.prototype._id = function() {
  */
 Lady.prototype._inject = function(node, target) {
 	var capture = '',
-	    doc,
 	    i,
 	    newNode = this._clone(node),
 	    tmp;
