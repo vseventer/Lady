@@ -109,10 +109,13 @@ Lady.prototype._clone = function(node) {
 
 	// Add attributes
 	for(i = 0; i < node.attributes.length; i += 1) {
-		newNode.setAttribute(
-			node.attributes[i].name,
-			node.attributes[i].value
-		);
+		if(node.attributes[i].specified) {//IE7 needs this
+			console.log(node.attributes[i].name);
+			newNode.setAttribute(
+				node.attributes[i].name,
+				node.attributes[i].value
+			);
+		}
 	}
 	return newNode;
 };
@@ -150,9 +153,9 @@ Lady.prototype._id = function() {
  */
 Lady.prototype._isScript = function(node) {
 	if(!document.importNode) {//IE<9
-		return '#text' === node.nodeName
-		 && 'object' === node.parentNode.nodeName.toLowerCase()
-		 && 'script' === node.parentNode.getAttribute('data-node').toLowerCase();
+		// Check for converted script tags
+		return 'object' === node.nodeName.toLowerCase()
+		    && 'script' === node.getAttribute('data-node').toLowerCase();
 	}
 	return '#text' === node.nodeName
 	 && 'script' === node.parentNode.nodeName.toLowerCase();
@@ -181,12 +184,17 @@ Lady.prototype._inject = function(node, target) {
 
 	// Handle node
 	if(this._isScript(node)) {
-		this._eval(node.nodeValue);
-
 		// Disconnect obsolete parent
-		tmp = target.parentNode;
-		tmp.removeChild(target);
-		target = tmp;
+		if(document.importNode) {
+			this._eval(node.nodeValue);
+
+			tmp = target.parentNode;
+			tmp.removeChild(target);
+			target = tmp;
+		}
+		else {//IE
+			this._eval(node.innerHTML);
+		}
 	}
 	else {//inject
 		target.appendChild(newNode);
@@ -229,25 +237,11 @@ Lady.prototype._render = function(data, target) {
  */
 Lady.prototype._stringToDom = function(str) {
 	if(!document.importNode) {//IE<9
+		// Avoid IE rendering script directly, so convert node to object
 		str = str.replace(/<script([^>]*)>/g, '<object data-node="script"$1>')
                  .replace(/<\/script>/g,      '</object>');
 	}
 	var el = document.createElement('div');
 	el.innerHTML = str;
 	return el.childNodes;
-
-//	str = '<div>' + str + '</div>';//force single root
-
-
-//	// Create document
-//	// @link https://gist.github.com/905833
-//	var doc;
-//	if(window.DOMParser) {
-//		doc = new DOMParser().parseFromString(str, 'application/xhtml+xml');
-//	}
-//	else {//Internet Explorer
-//		doc = new ActiveXObject('Microsoft.XMLDOM');
-//		doc.loadXML(str);
-//	}
-//	return doc.documentElement.childNodes;//exclude root
 };
