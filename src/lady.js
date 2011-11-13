@@ -1,6 +1,9 @@
 /*jslint regexp: true, evil: true, white: true, nomen: true, maxerr: 50, indent: 4 */
 /*globals document, XMLHttpRequest, window*/
 
+;(function(window, document, undefined) {
+	'use strict';
+
 function Lady() {
 
 	/**
@@ -120,7 +123,7 @@ Lady.prototype.render = function() {
  * @returns void
  */
 Lady.prototype._eval = function(data) {
-	if('' === data) {//nothing to eval
+	if('' === data) {//nothing to do
 		return;
 	}
 
@@ -139,7 +142,7 @@ Lady.prototype._eval = function(data) {
 };
 
 /**
- * Generates ID
+ * Generates id
  * 
  * @access private
  * @returns String
@@ -249,9 +252,9 @@ Lady.prototype._render = function(data, target) {
  * @returns Array (list of nodes)
  */
 Lady.prototype._stringToDom = function(str) {
-	if(!this._allowScript) {//convert script to textarea to avoid instant parsing
-		// Convert scripts to textarea
-		// NOTE data-node value is not quoted, avoiding JS syntax errors
+	if(!this._allowScript) {
+		// Convert scripts to textareas to avoid instant eval
+		// NOTE data-node value is not quoted in order to avoid JS syntax errors
 		str = str.replace(/<script([^>]*)>/g, '<textarea data-node=script$1>')
 		         .replace(/<\/script>/g,      '</textarea>');
 	}
@@ -261,3 +264,7 @@ Lady.prototype._stringToDom = function(str) {
 	el.innerHTML = str;
 	return el.childNodes;
 };
+
+
+window.Lady = Lady;
+}(window, document));
