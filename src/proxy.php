@@ -76,10 +76,9 @@ if(false === $body) {
 	exit;
 }
 
-//print_R($headers);
 // Print
 foreach(explode("\r\n", $headers) as $header) {
-	//header($header);
+	header($header);
 }
 
 // Remove headers already handled by proxy

@@ -1,3 +1,6 @@
+/*jslint regexp: true, evil: true, white: true, nomen: true, maxerr: 50, indent: 4 */
+/*globals document, XMLHttpRequest, window*/
+
 function Lady() {
 
 	/**
@@ -104,40 +107,9 @@ Lady.prototype.render = function() {
 			result += 1;
 		}
 	}
+	document.write = this._write;//restore
+
 	return result;
-};
-
-/**
- * Shallow clones node
- * 
- * @access private
- * @param HTMLElement node
- * @returns HTMLElement
- */
-Lady.prototype._clone = function(node) {
-	if(document.importNode) {
-		return node.cloneNode(false);
-	}
-
-	// Internet Explorer < 9 does not support cloning between documents
-	if('#text' === node.nodeName.toLowerCase()) {//plaintext
-		return document.createTextNode(node.nodeValue);
-	}
-
-	// Complex node
-	var i,
-	    newNode = document.createElement(node.nodeName);
-
-	// Add attributes
-	for(i = 0; i < node.attributes.length; i += 1) {
-		if(node.attributes[i].specified) {//IE7 needs this
-			newNode.setAttribute(
-				node.attributes[i].name,
-				node.attributes[i].value
-			);
-		}
-	}
-	return newNode;
 };
 
 /**
@@ -150,6 +122,13 @@ Lady.prototype._clone = function(node) {
 Lady.prototype._eval = function(data) {
 	if('' === data) {//nothing to eval
 		return;
+	}
+
+	if(!this._allowScript) {
+		// Textarea escapes less/greater then, undo here
+		data = data.replace(/&lt;/g, '<')
+		           .replace(/&gt;/g, '>')
+		           .replace(/&amp;/g, '&');
 	}
 
 	// @link http://perfectionkills.com/global-eval-what-are-the-options
@@ -179,8 +158,7 @@ Lady.prototype._id = function() {
 Lady.prototype._inject = function(node, target) {
 	var capture = '',
 	    i,
-	    newNode,
-	    request;
+	    newNode;
 
 	// Handle node
 	if(this._isScript(node)) {
@@ -205,7 +183,7 @@ Lady.prototype._inject = function(node, target) {
 		}
 	}
 	else {//inject
-		newNode = this._clone(node);
+		newNode = node.cloneNode(false);//shallow
 		target.appendChild(newNode);
 
 		// Inject children
@@ -272,11 +250,8 @@ Lady.prototype._render = function(data, target) {
  */
 Lady.prototype._stringToDom = function(str) {
 	if(!this._allowScript) {//convert script to textarea to avoid instant parsing
-		// Textarea escapes less/greater then, undo here
-		str = str.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-
 		// Convert scripts to textarea
-		// NOTE data-node value is not quoted, to avoid JS syntax errors
+		// NOTE data-node value is not quoted, avoiding JS syntax errors
 		str = str.replace(/<script([^>]*)>/g, '<textarea data-node=script$1>')
 		         .replace(/<\/script>/g,      '</textarea>');
 	}
