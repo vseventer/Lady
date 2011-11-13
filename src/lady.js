@@ -23,6 +23,15 @@ function Lady() {
 	this.autoCapture = true;
 
 	/**
+	 * Proxy
+	 * @access public
+	 * @var function proxy
+	 */
+	this.proxy = function(url) {
+		return url;
+	};
+
+	/**
 	 * Queue
 	 * @access public
 	 * @var Array queue
@@ -184,13 +193,7 @@ Lady.prototype._inject = function(node, target) {
 
 		// Check type
 		if(node.src) {//external
-			// NOTE synchronously, as next nodes may depend on its content
-			request = new XMLHttpRequest();
-			request.open('GET', node.src, false);
-			request.send(null);
-			if(2 === parseInt(request.status / 100, 10)) {//successful
-				this._eval(request.responseText);
-			}
+			this._eval(this._load(node.src));
 		}
 		else {//inline
 			this._eval(node.innerHTML);
@@ -224,6 +227,23 @@ Lady.prototype._isScript = function(node) {
 		    && 'script'   === node.getAttribute('data-node').toLowerCase();
 	}
 	return 'script' === node.nodeName.toLowerCase();
+};
+
+/**
+ * Loads URL
+ * NOTE synchronously, since sibling nodes may depend on content
+ * 
+ * @param String url
+ * @returns String (response)
+ */
+Lady.prototype._load = function(url) {
+	var request = new XMLHttpRequest();
+	request.open('GET', this.proxy(url), false);
+	request.send(null);
+	if(2 === parseInt(request.status / 100, 10)) {//successful
+		return request.responseText;
+	}
+	return '';//failed, no data
 };
 
 /**
