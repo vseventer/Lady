@@ -5,6 +5,9 @@
  */
 
 // Pre
+error_reporting(E_ALL | E_STRICT);
+ini_set('display_errors', 'Off');
+
 if(!isset($_GET['url'])) {
 	header('HTTP/1.1 400 Bad Request');
 	exit;
@@ -73,8 +76,15 @@ if(false === $body) {
 	exit;
 }
 
+//print_R($headers);
 // Print
 foreach(explode("\r\n", $headers) as $header) {
-	header($header);
+	//header($header);
 }
+
+// Remove headers already handled by proxy
+header_remove('Content-Encoding');
+header_remove('Content-Length');
+header_remove('Transfer-Encoding');
+
 echo $body;

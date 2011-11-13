@@ -166,7 +166,7 @@ Lady.prototype._eval = function(data) {
  * @returns String
  */
 Lady.prototype._id = function() {
-	return '__' + new Date().getTime();
+	return '__' + this.queue.length + '_' + new Date().getTime();
 };
 
 /**
