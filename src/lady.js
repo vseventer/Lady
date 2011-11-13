@@ -170,7 +170,8 @@ Lady.prototype._id = function() {
 Lady.prototype._inject = function(node, target) {
 	var capture = '',
 	    i,
-	    newNode;
+	    newNode,
+	    request;
 
 	// Handle node
 	if(this._isScript(node)) {
@@ -180,7 +181,20 @@ Lady.prototype._inject = function(node, target) {
 				capture += raw;
 			};
 		}());
-		this._eval(node.innerHTML);
+
+		// Check type
+		if(node.src) {//external
+			// NOTE synchronously, as next nodes may depend on its content
+			request = new XMLHttpRequest();
+			request.open('GET', node.src, false);
+			request.send(null);
+			if(2 === parseInt(request.status / 100, 10)) {//successful
+				this._eval(request.responseText);
+			}
+		}
+		else {//inline
+			this._eval(node.innerHTML);
+		}
 
 		// Inject capture
 		if('' !== capture) {

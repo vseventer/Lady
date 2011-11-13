@@ -458,6 +458,117 @@ test('Nested siblings', function() {
 });
 
 
+module('Scripts - Includes', {
+	setup: function() {
+		this.lady   = new Lady();
+		this.target = document.getElementById('qunit-fixture');
+	}
+});
+
+test('Text', function() {
+	this.lady.enqueue(this.target.id, '<script src="foo.js"></script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'bar', '00');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<script src="foo.js"></script>baz'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'barbaz', '01');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, 'baz<script src="foo.js"></script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'bazbar', '10');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, 'baz<script src="foo.js"></script>yux'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'bazbaryux', '11');
+});
+
+test('Nodes', function() {
+	this.lady.enqueue(this.target.id, '<p><script src="foo.js"></script></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>bar</p>', '1');
+});
+
+test('Siblings', function() {
+	this.lady.enqueue(this.target.id, '<script src="foo.js"></script><script src="foo.js"></script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'barbar', '1');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p><script src="foo.js"></script><script src="foo.js"></script></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>barbar</p>', '1');
+});
+
+test('Nested', function() {
+	this.lady.enqueue(this.target.id, '<p><script src="foo.js"></script><small><script src="foo.js"></script></small></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>bar<small>bar</small></p>', '1');
+});
+
+
+module('Scripts - Recursive includes', {
+	setup: function() {
+		this.lady   = new Lady();
+		this.target = document.getElementById('qunit-fixture');
+	}
+});
+
+test('Text', function() {
+	this.lady.enqueue(this.target.id, '<script src="baz.js"></script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'bar', '00');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<script src="baz.js"></script>yux'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'baryux', '01');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, 'yux<script src="baz.js"></script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'yuxbar', '10');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, 'yux<script src="baz.js"></script>yuux'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'yuxbaryuux', '11');
+});
+
+test('Nodes', function() {
+	this.lady.enqueue(this.target.id, '<p><script src="baz.js"></script></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>bar</p>', '1');
+});
+
+test('Siblings', function() {
+	this.lady.enqueue(this.target.id, '<script src="baz.js"></script><script src="baz.js"></script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'barbar', '1');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p><script src="baz.js"></script><script src="baz.js"></script></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>barbar</p>', '1');
+});
+
+test('Nested', function() {
+	this.lady.enqueue(this.target.id, '<p><script src="baz.js"></script><small><script src="baz.js"></script></small></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>bar<small>bar</small></p>', '1');
+});
+
 /**
  * Mocks input
  * NOTE necessary since we can’t use document.write directly
@@ -466,8 +577,8 @@ test('Nested siblings', function() {
  */
 String.prototype.mock = function() {
 	// @link http://phpjs.org/functions/addslashes:303
-	var str = this.replace(/[\\']/g,    '\\$&')
-	              .replace('</script>', "</' + 'script>");
+	var str = this.replace(/[\\']/g,      '\\$&')
+	              .replace(/<\/script>/g, "</' + 'script>");
 	return "<script>document.write('" + str + "');<\/script>";
 };
 
