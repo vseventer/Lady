@@ -139,6 +139,10 @@ Lady.prototype._clone = function(node) {
  * @returns void
  */
 Lady.prototype._eval = function(data) {
+	if('' === data) {//nothing to eval
+		return;
+	}
+
 	// @link http://perfectionkills.com/global-eval-what-are-the-options
 	// @link http://www.blog.highub.com/javascript/decoding-jquery-evaluates-a-script-in-a-global-context/
 	(window.execScript || function(data) {
@@ -166,42 +170,31 @@ Lady.prototype._id = function() {
 Lady.prototype._inject = function(node, target) {
 	var capture = '',
 	    i,
-	    newNode = this._clone(node),
-	    tmp;
-
-	// Capture document.write called from node
-	document.write = (function() {
-		return function(raw) {
-			capture += raw;
-		};
-	}());
+	    newNode;
 
 	// Handle node
 	if(this._isScript(node)) {
-		if(!this._allowScript) {//innerHTML is not included as childNode
-			this._eval(node.innerHTML);
-		}
-		else {
-			this._eval(node.nodeValue);
+		// Capture calls to document.write
+		document.write = (function() {
+			return function(raw) {
+				capture += raw;
+			};
+		}());
+		this._eval(node.innerHTML);
 
-			// Disconnect obsolete parent
-			tmp = target.parentNode;
-			tmp.removeChild(target);
-			target = tmp;			
+		// Inject capture
+		if('' !== capture) {
+			this._render(capture, target);
 		}
 	}
 	else {//inject
+		newNode = this._clone(node);
 		target.appendChild(newNode);
-	}
 
-	// Inject capture
-	if('' !== capture) {
-		this._render(capture, target);
-	}
-
-	// Inject children
-	for(i = 0; i < node.childNodes.length; i += 1) {
-		this._inject(node.childNodes[i], newNode);
+		// Inject children
+		for(i = 0; i < node.childNodes.length; i += 1) {
+			this._inject(node.childNodes[i], newNode);
+		}
 	}
 };
 
@@ -213,11 +206,10 @@ Lady.prototype._inject = function(node, target) {
  */
 Lady.prototype._isScript = function(node) {
 	if(!this._allowScript) {//check for converted node
-		return 'object' === node.nodeName.toLowerCase()
-		    && 'script' === node.getAttribute('data-node').toLowerCase();
+		return 'textarea' === node.nodeName.toLowerCase()
+		    && 'script'   === node.getAttribute('data-node').toLowerCase();
 	}
-	return '#text' === node.nodeName.toLowerCase()
-	   && 'script' === node.parentNode.nodeName.toLowerCase();
+	return 'script' === node.nodeName.toLowerCase();
 };
 
 /**
@@ -245,9 +237,14 @@ Lady.prototype._render = function(data, target) {
  * @returns Array (list of nodes)
  */
 Lady.prototype._stringToDom = function(str) {
-	if(!this._allowScript) {//convert node to object
-		str = str.replace(/<script([^>]*)>/g, '<object data-node="script"$1>')
-                 .replace(/<\/script>/g,      '</object>');
+	if(!this._allowScript) {//convert node to textarea so it won’t be parsed
+		// Textareas escape less/greater then
+		str = str.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+		// Convert scripts to textarea
+		// NOTE data-node value is not quoted, to avoid JS syntax errors
+		str = str.replace(/<script([^>]*)>/g, '<textarea data-node=script$1>')
+		         .replace(/<\/script>/g,      '</textarea>');
 	}
 
 	// NOTE innerHTML is not in DOM API, but works best here

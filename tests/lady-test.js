@@ -257,7 +257,206 @@ test('Sibling nodes with text (4: both nodes with text)', function() {
 	equal(this.target.innerHTML.strip(), 'foo<p>bar</p>baz<div>yux</div>yuux', '111');
 });
 
-module('Scripts');
+
+module('Nodes - Nested', {
+	setup: function() {
+		this.lady   = new Lady();
+		this.target = document.getElementById('qunit-fixture');
+	}
+});
+
+test('Nodes', function() {
+	this.lady.enqueue(this.target.id, '<p><small></small></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small></small></p>', '000');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p><small></small>foo</p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small></small>foo</p>', '001');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p><small>foo</small></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small>foo</small></p>', '010');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p><small>foo</small>bar</p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small>foo</small>bar</p>', '011');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p>foo<small></small></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>foo<small></small></p>', '100');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p>foo<small></small>bar</p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>foo<small></small>bar</p>', '101');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p>foo<small>bar</small></p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>foo<small>bar</small></p>', '110');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<p>foo<small>bar</small>baz</p>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p>foo<small>bar</small>baz</p>', '111');
+});
+
+
+module('Scripts - Recursive', {
+	setup: function() {
+		this.lady   = new Lady();
+		this.target = document.getElementById('qunit-fixture');
+	}
+});
+
+test('Text', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '', '0');
+
+	QUnit.reset();//clear DOM
+
+	this.lady.enqueue(this.target.id, '<script>document.write("foo");<\/script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'foo', '1');
+});
+
+test('Nodes', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<p></p>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p></p>', '1');
+});
+
+test('Sibling nodes', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<p></p><div></div>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p></p><div></div>', '1');
+});
+
+test('Nested', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<p><small></small></p>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small></small></p>', '1');
+});
+
+test('Nested siblings', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<p><small></small><span></span></p>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small></small><span></span></p>', '1');
+});
+
+
+module('Scripts - Double recursive', {
+	setup: function() {
+		this.lady   = new Lady();
+		this.target = document.getElementById('qunit-fixture');
+	}
+});
+
+test('Text', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '', '0');
+
+	QUnit.reset();//clear DOM
+	
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"foo\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'foo', '1');
+});
+
+test('Nodes', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"<p></p>\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p></p>', '1');
+});
+
+test('Sibling nodes', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"<p></p><div></div>\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p></p><div></div>', '1');
+});
+
+test('Nested', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"<p><small></small></p>\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small></small></p>', '1');
+});
+
+test('Nested siblings', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"<p><small></small><span></span></p>\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small></small><span></span></p>', '1');
+});
+
+
+module('Scripts - Recursive siblings', {
+	setup: function() {
+		this.lady   = new Lady();
+		this.target = document.getElementById('qunit-fixture');
+	}
+});
+
+test('Text', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"\\\");document.write(\\\"\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '', '0');
+
+	QUnit.reset();//clear DOM
+	
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"\\\");document.write(\\\"foo\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'foo', '1');
+
+	QUnit.reset();//clear DOM
+	
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"foo\\\");document.write(\\\"\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'foo', '0');
+
+	QUnit.reset();//clear DOM
+	
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"foo\\\");document.write(\\\"bar\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), 'foobar', '1');
+});
+
+test('Nodes', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"<p>\\\");document.write(\\\"</p>\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p></p>', '1');
+});
+
+test('Sibling nodes', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"<p></p>\\\");document.write(\\\"<div></div>\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p></p><div></div>', '1');
+});
+
+test('Nested', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"<p><small>\\\");document.write(\\\"</small></p>\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small></small></p>', '1');
+});
+
+test('Nested siblings', function() {
+	this.lady.enqueue(this.target.id, '<script>document.write("<script>document.write(\\\"<p><small></small>\\\");document.write(\\\"<span></span></p>\\\");</" + "script>");</script>'.mock());
+	this.lady.render();
+	equal(this.target.innerHTML.strip(), '<p><small></small><span></span></p>', '1');
+});
+
 
 /**
  * Mocks input
@@ -267,7 +466,9 @@ module('Scripts');
  */
 String.prototype.mock = function() {
 	// @link http://phpjs.org/functions/addslashes:303
-	return "<script>document.write('" + this.replace(/[\\']/g, '\\$&') + "');<\/script>";
+	var str = this.replace(/[\\']/g,    '\\$&')
+	              .replace('</script>', "</' + 'script>");
+	return "<script>document.write('" + str + "');<\/script>";
 };
 
 /**
