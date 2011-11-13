@@ -169,7 +169,7 @@ Lady.prototype._inject = function(node, target) {
 	    newNode = this._clone(node),
 	    tmp;
 
-	// Capture document.writes from node
+	// Capture document.write called from node
 	document.write = (function() {
 		return function(raw) {
 			capture += raw;
@@ -178,7 +178,7 @@ Lady.prototype._inject = function(node, target) {
 
 	// Handle node
 	if(this._isScript(node)) {
-		if(!this._allowScript) {//innerHTML is not accounted as childNode
+		if(!this._allowScript) {//innerHTML is not included as childNode
 			this._eval(node.innerHTML);
 		}
 		else {
