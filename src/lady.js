@@ -97,11 +97,12 @@ Lady.prototype._clone = function(node) {
 		return node.cloneNode(false);
 	}
 
-	// Internet Explorer
+	// IE < 9
+	// NOTE importNode not available, so copy alien node in document
 	if('#text' === node.nodeName) {//simple node
 		return document.createTextNode(node.nodeValue);
 	}
-	
+
 	// Complex node
 	var i,
 	    newNode = document.createElement(node.nodeName);
@@ -132,6 +133,32 @@ Lady.prototype._eval = function(data) {
 };
 
 /**
+ * Generates ID
+ * 
+ * @access private
+ * @returns String
+ */
+Lady.prototype._id = function() {
+	return '__' + new Date().getTime();
+};
+
+/**
+ * Returns whether node is body of script
+ * 
+ * @param HTMLElement node
+ * @returns boolean
+ */
+Lady.prototype._isScript = function(node) {
+	if(!document.importNode) {//IE<9
+		return '#text' === node.nodeName
+		 && 'object' === node.parentNode.nodeName.toLowerCase()
+		 && 'script' === node.parentNode.getAttribute('data-node').toLowerCase();
+	}
+	return '#text' === node.nodeName
+	 && 'script' === node.parentNode.nodeName.toLowerCase();
+};
+
+/**
  * Injects node into target
  * 
  * @param DOMElement node
@@ -153,7 +180,7 @@ Lady.prototype._inject = function(node, target) {
 	}());
 
 	// Handle node
-	if('#text' === node.nodeName && 'script' === node.parentNode.nodeName.toLowerCase()) {
+	if(this._isScript(node)) {
 		this._eval(node.nodeValue);
 
 		// Disconnect obsolete parent
@@ -177,39 +204,6 @@ Lady.prototype._inject = function(node, target) {
 };
 
 /**
- * Converts string to DOM
- * 
- * @access private
- * @param String str
- * @returns Array (list of nodes)
- */
-Lady.prototype._stringToDom = function(str) {
-	str = '<div>' + str + '</div>';//force single root
-
-	// Create document
-	// @link https://gist.github.com/905833
-	var doc;
-	if(window.DOMParser) {
-		doc = new DOMParser().parseFromString(str, 'application/xhtml+xml');
-	}
-	else {//Internet Explorer
-		doc = new ActiveXObject('Microsoft.XMLDOM');
-		doc.loadXML(str);
-	}
-	return doc.documentElement.childNodes;//exclude root
-};
-
-/**
- * Generates ID
- * 
- * @access private
- * @returns String
- */
-Lady.prototype._id = function() {
-	return '__' + new Date().getTime();
-};
-
-/**
  * Renders data into target
  * 
  * @param String data
@@ -224,4 +218,36 @@ Lady.prototype._render = function(data, target) {
 	for(i = 0; i < doc.length; i += 1) {
 		this._inject(doc[i], target);
 	}
+};
+
+/**
+ * Converts string to DOM
+ * 
+ * @access private
+ * @param String str
+ * @returns Array (list of nodes)
+ */
+Lady.prototype._stringToDom = function(str) {
+	if(!document.importNode) {//IE<9
+		str = str.replace(/<script([^>]*)>/g, '<object data-node="script"$1>')
+                 .replace(/<\/script>/g,      '</object>');
+	}
+	var el = document.createElement('div');
+	el.innerHTML = str;
+	return el.childNodes;
+
+//	str = '<div>' + str + '</div>';//force single root
+
+
+//	// Create document
+//	// @link https://gist.github.com/905833
+//	var doc;
+//	if(window.DOMParser) {
+//		doc = new DOMParser().parseFromString(str, 'application/xhtml+xml');
+//	}
+//	else {//Internet Explorer
+//		doc = new ActiveXObject('Microsoft.XMLDOM');
+//		doc.loadXML(str);
+//	}
+//	return doc.documentElement.childNodes;//exclude root
 };
