@@ -251,8 +251,8 @@ Lady.prototype._render = function(data, target) {
  * @returns Array (list of nodes)
  */
 Lady.prototype._stringToDom = function(str) {
-	if(!this._allowScript) {//convert node to textarea so it won’t be parsed
-		// Textareas escape less/greater then
+	if(!this._allowScript) {//convert script to textarea to avoid instant parsing
+		// Textarea escapes less/greater then, undo here
 		str = str.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 
 		// Convert scripts to textarea
