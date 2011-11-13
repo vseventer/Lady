@@ -1,6 +1,14 @@
 function Lady() {
 
 	/**
+	 * Allow script in innerHTML flag
+	 * NOTE affects IE < 9
+	 * @access private
+	 * @var boolean _allowScript
+	 */
+	this._allowScript = null;
+
+	/**
 	 * Native doucment.write
 	 * @access private
 	 * @var function _write
@@ -60,6 +68,11 @@ Lady.prototype.init = function() {
 			};
 		}(this));
 	}
+
+	// Determine script support
+	var el = document.createElement('div');
+	el.innerHTML = '<script></script>';
+	this._allowScript = 1 === el.childNodes.length;
 };
 
 /**
@@ -97,9 +110,8 @@ Lady.prototype._clone = function(node) {
 		return node.cloneNode(false);
 	}
 
-	// IE < 9
-	// NOTE importNode not available, so copy alien node in document
-	if('#text' === node.nodeName.toLowerCase()) {//simple node
+	// Internet Explorer < 9 does not support cloning between documents
+	if('#text' === node.nodeName.toLowerCase()) {//plaintext
 		return document.createTextNode(node.nodeValue);
 	}
 
@@ -167,16 +179,16 @@ Lady.prototype._inject = function(node, target) {
 
 	// Handle node
 	if(this._isScript(node)) {
-		// Disconnect obsolete parent
-		if(document.importNode) {
+		if(!this._allowScript) {//innerHTML is not accounted as childNode
+			this._eval(node.innerHTML);
+		}
+		else {
 			this._eval(node.nodeValue);
 
+			// Disconnect obsolete parent
 			tmp = target.parentNode;
 			tmp.removeChild(target);
-			target = tmp;
-		}
-		else {//IE
-			this._eval(node.innerHTML);
+			target = tmp;			
 		}
 	}
 	else {//inject
@@ -201,13 +213,12 @@ Lady.prototype._inject = function(node, target) {
  * @returns boolean
  */
 Lady.prototype._isScript = function(node) {
-	if(!document.importNode) {//IE<9
-		// Check for converted script tags
+	if(!this._allowScript) {//check for converted node
 		return 'object' === node.nodeName.toLowerCase()
 		    && 'script' === node.getAttribute('data-node').toLowerCase();
 	}
 	return '#text' === node.nodeName.toLowerCase()
-	 && 'script' === node.parentNode.nodeName.toLowerCase();
+	   && 'script' === node.parentNode.nodeName.toLowerCase();
 };
 
 /**
@@ -235,11 +246,12 @@ Lady.prototype._render = function(data, target) {
  * @returns Array (list of nodes)
  */
 Lady.prototype._stringToDom = function(str) {
-	if(!document.importNode) {//IE<9
-		// Avoid IE rendering script directly, so convert node to object
+	if(!this._allowScript) {//convert node to object
 		str = str.replace(/<script([^>]*)>/g, '<object data-node="script"$1>')
                  .replace(/<\/script>/g,      '</object>');
 	}
+
+	// NOTE innerHTML is not in DOM API, but works best here
 	var el = document.createElement('div');
 	el.innerHTML = str;
 	return el.childNodes;
