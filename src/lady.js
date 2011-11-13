@@ -99,7 +99,7 @@ Lady.prototype._clone = function(node) {
 
 	// IE < 9
 	// NOTE importNode not available, so copy alien node in document
-	if('#text' === node.nodeName) {//simple node
+	if('#text' === node.nodeName.toLowerCase()) {//simple node
 		return document.createTextNode(node.nodeValue);
 	}
 
@@ -110,7 +110,6 @@ Lady.prototype._clone = function(node) {
 	// Add attributes
 	for(i = 0; i < node.attributes.length; i += 1) {
 		if(node.attributes[i].specified) {//IE7 needs this
-			console.log(node.attributes[i].name);
 			newNode.setAttribute(
 				node.attributes[i].name,
 				node.attributes[i].value
@@ -143,22 +142,6 @@ Lady.prototype._eval = function(data) {
  */
 Lady.prototype._id = function() {
 	return '__' + new Date().getTime();
-};
-
-/**
- * Returns whether node is body of script
- * 
- * @param HTMLElement node
- * @returns boolean
- */
-Lady.prototype._isScript = function(node) {
-	if(!document.importNode) {//IE<9
-		// Check for converted script tags
-		return 'object' === node.nodeName.toLowerCase()
-		    && 'script' === node.getAttribute('data-node').toLowerCase();
-	}
-	return '#text' === node.nodeName
-	 && 'script' === node.parentNode.nodeName.toLowerCase();
 };
 
 /**
@@ -209,6 +192,22 @@ Lady.prototype._inject = function(node, target) {
 	for(i = 0; i < node.childNodes.length; i += 1) {
 		this._inject(node.childNodes[i], newNode);
 	}
+};
+
+/**
+ * Returns whether node is body of script
+ * 
+ * @param HTMLElement node
+ * @returns boolean
+ */
+Lady.prototype._isScript = function(node) {
+	if(!document.importNode) {//IE<9
+		// Check for converted script tags
+		return 'object' === node.nodeName.toLowerCase()
+		    && 'script' === node.getAttribute('data-node').toLowerCase();
+	}
+	return '#text' === node.nodeName.toLowerCase()
+	 && 'script' === node.parentNode.nodeName.toLowerCase();
 };
 
 /**
