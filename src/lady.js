@@ -1,10 +1,16 @@
 /*jslint regexp: true, evil: true, white: true, nomen: true, maxerr: 50, indent: 4 */
 /*globals document, XMLHttpRequest, window*/
 
-//;(function(window, document, undefined) {
-//	'use strict';
+;(function(window, document, undefined) {
+	'use strict';
 
-function Lady() {
+/**
+ * Object definition
+ * 
+ * @access public
+ * @param boolean autoCapture (optional)
+ */
+function Lady(autoCapture) {
 
 	/**
 	 * Native doucment.write
@@ -14,13 +20,6 @@ function Lady() {
 	this._write = document.write;
 
 	/**
-	 * Autocapture flag
-	 * @access public
-	 * @var boolean autoCapture
-	 */
-	this.autoCapture = true;
-
-	/**
 	 * Proxy
 	 * @access public
 	 * @var function proxy
@@ -28,7 +27,7 @@ function Lady() {
 	this.proxy = function(url) {
 		return url;
 	};
-
+	
 	/**
 	 * Queue
 	 * @access public
@@ -37,7 +36,7 @@ function Lady() {
 	this.queue = [];
 
 	// Constructor
-	this.init();
+	this.init(false !== autoCapture);
 }
 
 /**
@@ -45,16 +44,25 @@ function Lady() {
  * 
  * @access public
  * @param String id
- * @param String data (optional)
+ * @param function|String data (optional)
  * @returns String
  */
-Lady.prototype.enqueue = function(id, data) {
+Lady.prototype.enqueue = function(id, data, external) {
 	data = data || null;
 	if(null === data) {//generate ID
 		data = id;
 		id   = this._id();
 	}
 
+	// Type juggling
+	if('function' === typeof data) {//call with window as context
+		data = '<script>(' + data + '(this));</script>';
+	}
+	else if('object' === typeof data) {//src
+		data = '<script src="' + (data.url || '') + '"></script>';
+	}
+
+	// Add to queue
 	this.queue.push({id: id, data: data});
 	return id;
 };
@@ -63,15 +71,16 @@ Lady.prototype.enqueue = function(id, data) {
  * Initializes lady
  * 
  * @access public
+ * @param boolean autoCapture
  * @returns void
  */
-Lady.prototype.init = function() {
+Lady.prototype.init = function(autoCapture) {
 	// Overwrite native document.write
-	if(this.autoCapture) {
+	if(autoCapture) {
 		document.write = (function(that) {
 			return function(raw) {
 				var id = that.enqueue(raw);
-				that._write.call(this, '<span id="' + id + '"></span>');
+				that._write.call(this, '<span class="lady-capture" id="' + id + '"></span>');
 			};
 		}(this));
 	}
@@ -81,21 +90,32 @@ Lady.prototype.init = function() {
  * Renders queue
  * 
  * @access public
- * @returns integer (number of rendered items)
+ * @returns Array (rendered nodes)
  */
 Lady.prototype.render = function() {
 	var item,
-	    result = 0,
+	    result = [],
 	    target;
 
 	// Dequeue items
 	while(0 < this.queue.length) {
 		item   = this.queue.shift();
 		target = document.getElementById(item.id) || null;
-		if(null !== target) {//target found
-			this._render(item.data, target);
-			result += 1;
+		if(null !== target) {
+			target.setAttribute(//add class
+				'class',
+				'lady ' + (target.getAttribute('class') || target.className || '')
+			);
 		}
+		else {//mock node at body end
+			target = document.createElement('span');
+			target.setAttribute('class', 'lady lady-mock');
+			target.setAttribute('id',    item.id);
+			document.getElementsByTagName('body')[0].appendChild(target);
+		}
+
+		this._render(item.data, target);
+		result.push(target);
 	}
 	document.write = this._write;//restore
 
@@ -144,9 +164,9 @@ Lady.prototype._inject = function(node, target) {
 			};
 		}(this));
 
-		// Check type
-		if(node.src) {//external
-			this._eval(this._load(node.src));
+		// Eval node contents
+		if((node.hasAttribute && node.hasAttribute('src')) || node.src) {//external
+			this._eval(this._load(node.getAttribute('src')));
 		}
 		else {//inline
 			this._eval(node.textContent || node.innerHTML);
@@ -217,6 +237,5 @@ Lady.prototype._stringToDom = function(str) {
 	return el.childNodes;
 };
 
-
-//window.Lady = Lady;
-//}(window, document));
+window.Lady = Lady;//expose
+}(window, document));
