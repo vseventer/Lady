@@ -1,18 +1,10 @@
 /*jslint regexp: true, evil: true, white: true, nomen: true, maxerr: 50, indent: 4 */
 /*globals document, XMLHttpRequest, window*/
 
-;(function(window, document, undefined) {
-	'use strict';
+//;(function(window, document, undefined) {
+//	'use strict';
 
 function Lady() {
-
-	/**
-	 * Allow script in innerHTML flag
-	 * NOTE affects IE < 9
-	 * @access private
-	 * @var boolean _allowScript
-	 */
-	this._allowScript = null;
 
 	/**
 	 * Native doucment.write
@@ -83,11 +75,6 @@ Lady.prototype.init = function() {
 			};
 		}(this));
 	}
-
-	// Determine script support
-	var el = document.createElement('div');
-	el.innerHTML = '<script></script>';
-	this._allowScript = 1 === el.childNodes.length;
 };
 
 /**
@@ -123,17 +110,6 @@ Lady.prototype.render = function() {
  * @returns void
  */
 Lady.prototype._eval = function(data) {
-	if('' === data) {//nothing to do
-		return;
-	}
-
-	if(!this._allowScript) {
-		// Textarea escapes less/greater then, undo here
-		data = data.replace(/&lt;/g, '<')
-		           .replace(/&gt;/g, '>')
-		           .replace(/&amp;/g, '&');
-	}
-
 	// @link http://perfectionkills.com/global-eval-what-are-the-options
 	// @link http://www.blog.highub.com/javascript/decoding-jquery-evaluates-a-script-in-a-global-context/
 	(window.execScript || function(data) {
@@ -159,34 +135,26 @@ Lady.prototype._id = function() {
  * @returns void
  */
 Lady.prototype._inject = function(node, target) {
-	var capture = '',
-	    i,
-	    newNode;
-
 	// Handle node
-	if(this._isScript(node)) {
+	if('script' === node.nodeName.toLowerCase()) {
 		// Capture calls to document.write
-		document.write = (function() {
+		document.write = (function(that) {
 			return function(raw) {
-				capture += raw;
+				that._render(raw, target);
 			};
-		}());
+		}(this));
 
 		// Check type
 		if(node.src) {//external
 			this._eval(this._load(node.src));
 		}
 		else {//inline
-			this._eval(node.innerHTML);
-		}
-
-		// Inject capture
-		if('' !== capture) {
-			this._render(capture, target);
+			this._eval(node.textContent || node.innerHTML);
 		}
 	}
 	else {//inject
-		newNode = node.cloneNode(false);//shallow
+		var i,
+		    newNode = node.cloneNode(false);//shallow
 		target.appendChild(newNode);
 
 		// Inject children
@@ -194,20 +162,6 @@ Lady.prototype._inject = function(node, target) {
 			this._inject(node.childNodes[i], newNode);
 		}
 	}
-};
-
-/**
- * Returns whether node is body of script
- * 
- * @param HTMLElement node
- * @returns boolean
- */
-Lady.prototype._isScript = function(node) {
-	if(!this._allowScript) {//check for converted node
-		return 'textarea' === node.nodeName.toLowerCase()
-		    && 'script'   === node.getAttribute('data-node').toLowerCase();
-	}
-	return 'script' === node.nodeName.toLowerCase();
 };
 
 /**
@@ -252,19 +206,17 @@ Lady.prototype._render = function(data, target) {
  * @returns Array (list of nodes)
  */
 Lady.prototype._stringToDom = function(str) {
-	if(!this._allowScript) {
-		// Convert scripts to textareas to avoid instant eval
-		// NOTE data-node value is not quoted in order to avoid JS syntax errors
-		str = str.replace(/<script([^>]*)>/g, '<textarea data-node=script$1>')
-		         .replace(/<\/script>/g,      '</textarea>');
-	}
+	//Add scoped element (only required by IE<9)
+	// @link http://msdn.microsoft.com/en-us/library/ms533897(v=vs.85).aspx#1
+	str = '<input type="hidden" />' + str;
 
 	// NOTE innerHTML is not in DOM API, but works best here
 	var el = document.createElement('div');
 	el.innerHTML = str;
+	el.removeChild(el.childNodes[0]);//IE<9: remove scoped element
 	return el.childNodes;
 };
 
 
-window.Lady = Lady;
-}(window, document));
+//window.Lady = Lady;
+//}(window, document));
