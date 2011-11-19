@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+	<title>Lady Async Demo</title>
+	<script src="../src/lady.async.js"></script>
+	<script>var lady = new Lady().capture();</script>
+</head>
+<body>
+<h1>Lady Async Demo</h1>
+<p id="tagline"></p>
+<p id="random">A random number: </p>
+<script>document.write('<h6>I am a pimped document.write (:</h6>');</script>
+<script>
+lady.defer({
+	id:   'tagline',
+	data: '<strong>Lady: Asynchronous Ad Loader</strong>'
+}).defer({
+	id:   'random',
+	data: function() {
+		document.write(Math.random());
+	}
+}).defer({
+	url:  '../tests/foo.js',
+	fn:   function(el) {
+		el.innerHTML += ' (externally loaded!)';
+	}
+});
+</script>
+<script>
+window.onload = function() {
+	lady.render();
+};
+</script>
+</body>
+</html>

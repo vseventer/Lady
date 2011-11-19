@@ -1,7 +1,7 @@
 /**
  * Lady test suite
  */
-module('Lady', {
+module('Lady (async)', {
 	setup: function() {
 		// Handle document.write to avoid breaking test suite
 		this.old = document.write;
@@ -50,8 +50,8 @@ test('Capture', function() {
 
 // Render
 // NOTE we don’t use qunit-fixture, since clearing doesn’t work async
-test('Render (basic)', function() {
-	stop(14);
+test('Render', function() {
+	QUnit.stop(14);
 
 	this.lady.defer({ data: 'foo', fn: function(el) {
 		strictEqual(el.innerHTML.strip(), 'foo', 'Textnode');

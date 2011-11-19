@@ -112,23 +112,18 @@
 	 */
 	Lady.prototype.defer = function(options) {
 		// Juggle parameters
-		var id  = options.id || this._id(),
+		var id   = options.id || this._id(),
 		    data,
-		    dfn;
+			dfn  = options.fn || function() { };
 
 		// Set data
 		if(options.url) {
 			data = '<script src="' + options.url + '"></script>';
-			dfn  = function(el) {
-				el.parentNode.removeChild(el);//remove node
-				options.fn && options.fn(el);
-			};
 		}
 		else {//data
 			data = 'function' === typeof options.data
 			     ? '<script>(' + options.data + ').call(window);</script>'
 			     : options.data;
-			dfn  = options.fn || function() { };
 		}
 
 		// Add to queue
