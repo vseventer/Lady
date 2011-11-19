@@ -1,6 +1,6 @@
-/*jslint browser: true, white: true, nomen: true, maxerr: 50, indent: 4 */
+/*jslint browser: true, evil: true, nomen: true, white: true*/
 
-(function(window, document) {
+;(function(window, document, undefined) {
 	'use strict';
 
 	/**
@@ -80,64 +80,78 @@
 		 * @var Queue _queue
 		 */
 		this._queue = new Queue();
+	}
 
-		// Constructor
+	/**
+	 * Enables document.write capturing
+	 * 
+	 * @access public
+	 * @returns Lady (fluent interface)
+	 */
+	Lady.prototype.capture = function() {
 		document.write = (function(context) {
 			return function(raw) {
-				var id = context.defer(raw);
-				context._write.call(//write placeholder
+				var id = context._id();
+				context.defer({
+					id:   id,
+					data: raw
+				})._write.call(//write placeholder
 					this,
 					'<span class="lady-capture" id="' + id + '"></span>'
 				);
 			};
 		}(this));
-	}
+		return this;
+	};
 
 	/**
 	 * Defers snippet
 	 * 
-	 * @param String id (optional)
-	 * @param function|object|String data
-	 * @returns String (id)
+	 * @param object options (id, data, url, fn)
+	 * @returns Lady (fluent interface)
 	 */
-	Lady.prototype.defer = function(id, data) {
-		// Check parameters
-		data = data || null;
-		if(null === data) {
-			data = id;
-			id   = this._id();
-		}
+	Lady.prototype.defer = function(options) {
+		// Juggle parameters
+		var id  = options.id || this._id(),
+		    data,
+		    dfn;
 
-		// Juggle to HTML
-		if('function' === typeof data) {
-			data = '<script>(' + data + ').call(window);</script>';
+		// Set data
+		if(options.url) {
+			data = '<script src="' + options.url + '"></script>';
+			dfn  = function(el) {
+				el.parentNode.removeChild(el);//remove node
+				options.fn && options.fn(el);
+			};
 		}
-		else if('object' === typeof data) {
-			data = '<script src="' + (data.url || '') + '"></script>';
+		else {//data
+			data = 'function' === typeof options.data
+			     ? '<script>(' + options.data + ').call(window);</script>'
+			     : options.data;
+			dfn  = options.fn || function() { };
 		}
 
 		// Add to queue
 		this._queue.add((function(context) {
 			return function(fn) {
 				var target = document.getElementById(id) || null;
-				if(null !== target) {
-					if(target.classList) {//HTML5 API
-						target.classList.add('lady');
-					}
-					else {
-						target.className += (target.className ? ' ' : '') + 'lady';
-					}
+				if(null !== target) {//add class
+					target.className += (target.className ? ' ' : '') + 'lady';
 				}
 				else {//add mock element
 					target = document.createElement('span');
-					target.setAttribute('class', 'lady lady-mock');
-					target.setAttribute('id',    id);
+					target.className = 'lady lady-mock';
+					target.id        = id;
 					(document.body || document.getElementsByTagName('body')[0]).appendChild(target);
 				}
-				context._render(data, target, fn);
+
+				context._render(data, target, function() {
+					dfn && dfn(target);//item fn
+					fn  && fn();//queue fn
+				});
 			};
 		}(this)));
-		return id;
+		return this;
 	};
 
 	/**
@@ -333,5 +347,5 @@
 
 
 	// Expose
-	window.lady = new Lady();
+	window.Lady = Lady;
 }(window, document));
