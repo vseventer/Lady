@@ -1,6 +1,6 @@
 /*jslint browser: true, evil: true, nomen: true, white: true*/
 
-;(function(window, document, undefined) {
+;(function(window, document) {
 	'use strict';
 
 	/**
@@ -68,28 +68,28 @@
 	 */
 	function Lady() {
 		/**
-		 * Native document.write
-		 * @access private
-		 * @var callback _write
-		 */
-		this._write = document.write;
-
-		/**
 		 * Snippet queue
 		 * @access private
 		 * @var Queue _queue
 		 */
 		this._queue = new Queue();
+
+		/**
+		 * Native document.write
+		 * @access private
+		 * @var callback _write
+		 */
+		this._write = document.write;
 	}
 
 	/**
-	 * Enables document.write capturing
+	 * Enables autocapturing
 	 * 
 	 * @access public
 	 * @returns Lady (fluent interface)
 	 */
 	Lady.prototype.capture = function() {
-		document.write = (function(context) {
+		document.write = document.writeln = (function(context) {
 			return function(raw) {
 				var id = context._id();
 				context.defer({
@@ -136,7 +136,12 @@
 			return function(fn) {
 				var target = document.getElementById(id) || null;
 				if(null !== target) {//add class
-					target.className += (target.className ? ' ' : '') + 'lady';
+					if(target.classList) {//HTML5 API
+						target.classList.add('lady');
+					}
+					else if(!target.className.match(/(\s|^)lady(\s|$)/)) {//add
+						target.className += (target.className ? ' ' : '') + 'lady';
+					}
 				}
 				else {//add mock element
 					target = document.createElement('span');
@@ -338,13 +343,12 @@
 		// @link http://msdn.microsoft.com/en-us/library/ms533897(v=vs.85).aspx#1
 		str = '<input type="hidden" />' + str;
 
-		// NOTE innerHTML is not in DOM API, but works best here
+		// NOTE innerHTML is not part of DOM API, but works best here
 		var el = document.createElement('div');
 		el.innerHTML = str;
 		el.removeChild(el.childNodes[0]);//IE<9: remove scoped element
 		return el.childNodes;
 	};
-
 
 	// Expose
 	window.Lady = Lady;

@@ -13,45 +13,41 @@ module('Queue', {
 // Constructor
 test('Constructor', function() {
 	equals(typeof this.queue, 'object', 'Constructor');
-	equals(this.queue.length(), 0, 'Number of jobs')
+	equals(this.queue.length(), 0, 'Number of jobs');
 });
 
 // Add method
 test('Add', function() {
-	equals(typeof this.queue.add(this.mock), 'object', 'Return value');
-	equals(this.queue.length(), 1, 'Added one element');
+	deepEqual(this.queue.add(this.mock), this.queue, 'Return value');
+	strictEqual(this.queue.length(), 1, 'Added one element');
 
 	this.queue.add(this.mock);
-	equals(this.queue.length(), 2, 'Added another element');
+	strictEqual(this.queue.length(), 2, 'Added another element');
 });
 
 // Flush method
 asyncTest('Flush', 3, function() {
+	var queue = this.queue;//make accessible in function scope
+
 	// Flush empty queue
-	this.queue.flush((function(context) {
-		return function() {
-			equals(context.queue.length(), 0, 'Flushed empty queue');
-			start();
-		};
-	}(this)));
+	this.queue.flush(function() {
+		strictEqual(queue.length(), 0, 'Flushed empty queue');
+		start();
+	});
 	QUnit.stop();
-	
+
 	// Flush one element
 	this.queue.add(this.mock);
-	this.queue.flush((function(context) {
-		return function() {
-			equals(context.queue.length(), 0, 'Flushed one element');
-			start();
-		};
-	}(this)));
+	this.queue.flush(function() {
+		strictEqual(queue.length(), 0, 'Flushed one element');
+		start();
+	});
 	QUnit.stop();
 
 	// Try flushing more than one element
 	this.queue.add(this.mock).add(this.mock);
-	this.queue.flush((function(context) {
-		return function() {
-			equals(context.queue.length(), 0, 'Flushed two elements');
-			start();
-		};
-	}(this)));
+	this.queue.flush(function() {
+		strictEqual(queue.length(), 0, 'Flushed two elements');
+		start();
+	});
 });
