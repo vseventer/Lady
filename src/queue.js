@@ -1,5 +1,15 @@
-/*jslint browser: true, nomen: true, white: true*/
+/*!
+ * Queue
+ * 
+ * Asynchronous job queue.
+ * 
+ * @version 1.0beta
+ * @author Markably
+ * @link http://www.markably.com
+ * @copyright (c) Markably
+ */
 
+/*jslint browser: true, nomen: true, white: true*/
 ;(function() {
 	'use strict';
 

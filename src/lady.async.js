@@ -1,5 +1,18 @@
-/*jslint browser: true, evil: true, nomen: true, white: true*/
+/*!
+ * Lady
+ * 
+ * Lady is an asynchronous document.write deferrer. It can be used to defer
+ * loading of normally blocking ads, render document.writes in AJAX responses.
+ * Lady uses DOM manipulation techniques to provide support for complex
+ * scenarios, such as recursively included scripts.
+ * 
+ * @version 1.0beta
+ * @author Markably
+ * @link http://www.markably.com
+ * @copyright (c) Markably
+ */
 
+/*jslint browser: true, evil: true, nomen: true, white: true*/
 ;(function(window, document) {
 	'use strict';
 

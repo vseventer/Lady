@@ -1,7 +1,14 @@
 <?php
 
 /**
- * Simple PHP proxy, eliminating Cross Domain issues
+ * Proxy
+ *
+ * Simple PHP proxy, eliminating Cross Domain issues.
+ *
+ * @version 1.0beta
+ * @author Markably
+ * @link http://www.markably.com
+ * @copyright (c) Markably
  */
 
 // Pre
