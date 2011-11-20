@@ -31,7 +31,7 @@
 	 * Adds element to queue
 	 * 
 	 * @access public
-	 * @param callback fn (oncomplete)
+	 * @param function fn (oncomplete)
 	 * @returns Queue (fluent interface)
 	 */
 	Queue.prototype.add = function(fn) {
@@ -44,7 +44,7 @@
 	 * NOTE passed to element as callback, effectively flushing whole queue
 	 * 
 	 * @access public
-	 * @param callback fn (oncomplete, optional)
+	 * @param function fn (oncomplete, optional)
 	 * @returns void
 	 */
 	Queue.prototype.flush = function(fn) {

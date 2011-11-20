@@ -103,11 +103,11 @@
 	 */
 	Lady.prototype.capture = function() {
 		document.write = document.writeln = (function(context) {
-			return function(raw) {
+			return function() {
 				var id = context._id();
 				context.defer({
 					id:   id,
-					data: raw
+					data: [].concat.apply([], arguments).join('')//argc varies
 				})._write.call(//write placeholder
 					this,
 					'<span class="lady-capture" id="' + id + '"></span>'
@@ -260,9 +260,10 @@
 
 		// Local capturing
 		document.write = document.writeln = (function(context) {
-			return function(raw) {
+			return function() {
+				var args = [].concat.apply([], arguments).join('');//argc varies
 				queue.add(function(fn) {
-					context._render(raw, target, fn);
+					context._render(args, target, fn);
 				});
 			};
 		}(this));
