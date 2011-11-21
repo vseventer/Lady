@@ -200,7 +200,7 @@
 	Lady.prototype._id = (function() {
 		var i = 0;//static
 		return function() {
-			return '__' + (i += 1) + '_' + new Date().getTime();
+			return 'lady-' + (i += 1) + '-' + new Date().getTime();
 		};
 	}());
 
