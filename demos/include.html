@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8" />
+	<title>Lady Demos - Include</title>
+	<script src="../build/lady.min.js"></script>
+	<script>var lady = new Lady();</script>
+</head>
+<body>
+<h1>Lady Demos - Include</h1>
+<script>
+lady.defer({ url: 'demo.js' });
+</script>
+<script>
+window.onload = function() {
+	lady.render();
+};
+</script>
+</body>
+</html>

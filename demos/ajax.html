@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8" />
+	<title>Lady Demos - Plain</title>
+	<script src="../build/lady.min.js"></script>
+	<script>var lady = new Lady();</script>
+</head>
+<body>
+<h1>Lady Demos - Plain</h1>
+<div id="target"></div>
+<script>
+window.onload = function() {
+	var request = new XMLHttpRequest();
+	request.open('GET', '_ajax.html', true);
+	request.onreadystatechange = function() {
+		if(4 === this.readyState && 200 === this.status) {
+			lady.defer({
+				id:   'target',
+				data: this.responseText
+			}).render();
+		}
+	};
+	request.send(null);
+};
+</script>
+</body>
+</html>

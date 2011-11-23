@@ -1,9 +1,11 @@
 Lady
 ====
 
-Ads bring us money. However, synchronously loading ads through endless `document.writes` cost us money. So, why not load our ads asynchronously? Lady defers script execution, either explicitly or implicitly, rendering their output after all other content is loaded. `document.write` is no longer your enemy!
+Ads bring us money. Slow loading pages cost us money. Unfortunately, many ad providers still rely on the horribly outdated `document.write(ln)`, causing our browsers to lock while loading.
 
-By walking the DOM node by node, Lady is able to insert scripts at the designated position, but at a later time. Instead of staring at a blank screen waiting for a third party server to respond, you can now load all ads asynchronously. No more waiting, just making money with ads that work.
+So, why not combine the best of both worlds? Fast and nonblocking loads, together with ads to make some money. Lady defers script execution, either explicitly or implicitly, rendering `document.writes` asynchronously after all other content has been loaded. `document.write` is no longer your enemy!
+
+By walking the DOM node by node, Lady is able to insert scripts at the designated positions, but at a later time. Instead of staring at a blank screen waiting for a third party server to respond, you can now load all ads asynchronously. No more waiting, just making money with ads that work.
 
 ### Nesting
 Nesting of `document.write(ln)`s is supported. Since Lady uses DOM manipulation techniques, they will be rendered where they are supposed to be. To make sure all deferreds are rendered in order, Lady uses an asynchronous queue.

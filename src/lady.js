@@ -6,7 +6,7 @@
  * Lady uses DOM manipulation techniques to provide support for complex
  * scenarios, such as recursively included scripts.
  * 
- * @version 1.0beta
+ * @version v1.0b2
  * @author Markably
  * @link http://www.markably.com
  * @copyright (c) Markably

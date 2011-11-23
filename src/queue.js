@@ -3,7 +3,7 @@
  * 
  * Asynchronous job queue.
  * 
- * @version 1.0beta
+ * @version v1.0b2
  * @author Markably
  * @link http://www.markably.com
  * @copyright (c) Markably

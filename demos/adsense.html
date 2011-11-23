@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8" />
+	<title>Lady Demos - Adsense</title>
+	<script src="../build/lady.min.js"></script>
+	<script>var lady = new Lady();</script>
+</head>
+<body>
+<h1>Lady Demos - Adsense</h1>
+<div id="container"></div>
+<script>
+window.onload = lady.defer({
+	data: function() {
+		google_ad_client = "pub-0000000000000000";
+		// your adsense code
+	},
+	fn:   function(el) {
+		el.parentNode.removeChild(el);//remove useless node
+		lady.defer({
+			id:  'container',//adsense target
+			url: 'http://pagead2.googlesyndication.com/pagead/show_ads.js'
+		}).render();
+	}
+}).render();
+</script>
+</body>
+</html>
