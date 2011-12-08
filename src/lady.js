@@ -148,11 +148,11 @@
 	 */
 	Lady.prototype.capture = function() {
 		var buffer = '',
-		    stream = 0,//level
-		    target,
+			stream = 0,//level
+			target,
 
-		    // Generic write overwrite
-		    write = function(context, sep) {
+			// Generic write overwrite
+			write = function(context, sep) {
 				return function() {
 					buffer += [].concat.apply([], arguments).join(sep) + sep;//join argv
 					if(0 === stream) {
@@ -204,8 +204,8 @@
 	Lady.prototype.defer = function(options) {
 		// Juggle parameters
 		var id  = options.id || this._id(),
-		    data,
-		    dfn = options.fn || function() { };
+			data,
+			dfn = options.fn || function() { };
 
 		// Data
 		if(options.url) {//URL
@@ -363,12 +363,12 @@
 	 */
 	Lady.prototype._inject = function(node, target, fn) {
 		var context = this,
-		    i,
-		    newNode,
-		    queue   = new Queue(),
+			i,
+			newNode,
+			queue   = new Queue(),
 
-		    // Called in loop below to keep context
-		    enqueue = function(context, node, target) { 
+			// Called in loop below to keep context
+			enqueue = function(context, node, target) { 
 				queue.add(function(fn) {
 					context._inject(node, target, fn);
 				});
@@ -402,27 +402,27 @@
 	 */
 	Lady.prototype._injectScript = function(node, target, fn) {
 		var context   = this,
-		    script    = this._import(node, true),//deep
-		    queue     = new Queue(),
+			script    = this._import(node, true),//deep
+			queue     = new Queue(),
 
-		    // Control flow
-		    buffer    = '',
-		    stream    = 0,//level
+			// Control flow
+			buffer    = '',
+			stream    = 0,//level
 
-		    // Local document.* overwrites
-		    _document = {
+			// Local document.* overwrites
+			_document = {
 				open:    document.open,
 				close:   document.close,
 				write:   document.write,
 				writeln: document.writeln
 			},
-		    restore   = function() {//restores previous document.*
+			restore   = function() {//restores previous document.*
 				document.close   = _document.close;
 				document.open    = _document.open;
 				document.write   = _document.write;
 				document.writeln = _document.writeln;
 			},
-		    write     = function(sep) {
+			write     = function(sep) {
 				return function() {
 					buffer += [].concat.apply([], arguments).join(sep) + sep;//join argv
 					if(0 === stream && context._validate(buffer)) {
@@ -503,11 +503,11 @@
 	 */
 	Lady.prototype._render = function(str, target, fn) {
 		var nodelist = this._tokenize(str),
-		    i,
-		    queue    = new Queue(),
+			i,
+			queue    = new Queue(),
 
-		    // Called in loop below to keep context
-		    enqueue  = function(context, node) {
+			// Called in loop below to keep context
+			enqueue  = function(context, node) {
 				queue.add(function(fn) {
 					context._inject(node, target, fn);
 				});
@@ -529,8 +529,8 @@
 	 */
 	Lady.prototype._tokenize = function(str) {
 		var doc,
-		    mock,
-		    range;
+			mock,
+			range;
 
 		// Fragmentize
 		if(document.implementation.createHTMLDocument && document.createRange
@@ -563,7 +563,7 @@
 		// @link http://haacked.com/archive/2004/10/25/usingregularexpressionstomatchhtml.aspx
 		// NOTE self-closing tags do not matter
 		var open  = str.match(/<\w+(?:(?:\s+\w+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^'">\s]+))?)+\s*|\s*)>/, str),
-		    close = str.match(/<\/\w+\s*>/, str);
+			close = str.match(/<\/\w+\s*>/, str);
 		return open === close || (open && close && open.length === close.length);
 	};
 

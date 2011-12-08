@@ -13,7 +13,6 @@ Nesting of `document.write` is supported. Since Lady uses DOM manipulation techn
 ### Parallelization
 When you have deferred multiple unrelated scripts, you want them to execute in parallel. Although this is not a feature of Lady, you can simply create multiple instances to simulate this behavior.
 
-- - -
 
 ## Support
 Lady supports `document.close`, `document.open`, `document.write` and `document.writeln`. Moreover, deferreds are rendered using speculative parsing. More about this can be read here: https://developer.mozilla.org/en/HTML/HTML5/HTML5_Parser#Performance_improvement_with_speculative_parsing
@@ -22,31 +21,35 @@ No external library is needed to run Lady. Also, no explicit `eval`-calls are ma
 
 Lady is tested succesfully in all major browsers, including Internet Explorer 7 and 8. IE6 is not supported.
 
-- - -
 
 ## Caveats
 Although I think Lady is production ready, some ad providers will eventually screw up. During the development, I got surprised by the horrible code ad providers are putting us through. So, be warned.
 
 When you come along a piece of JavaScript that is not supported, drop me a line and I will look into it.
 
-- - -
+
 ## API
 
 Include Lady in the `head`:
 
-    <script src="lady.min.js"></script>
-    <script>var lady = new Lady();</script>
+```html
+<script src="lady.min.js"></script>
+<script>var lady = new Lady();</script>
+```
 
 Or, if you want to enable autocapture, use:
 
-    <script>var lady = new Lady().capture();</script>
-
+```html
+<script>var lady = new Lady().capture();</script>
+```
 
 When using autocapture, `document.write` calls will automatically be deferred. A placeholder is injected in its place.
 
 For more advanced users, explicit defers can be used as follows:
 
-    lady.defer({options});
+```javascript
+lady.defer({options});
+```
 
 Available `options` :
 
@@ -59,69 +62,89 @@ Available `options` :
 
 When the document is loaded, you want Lady to render all deferred items. This can be done by calling:
 
-     lady.render();
+```javascript
+lady.render();
+```
 
 Target elements need to be present in the DOM when calling `render()`, otherwise a mock container is created. 
 
-- - -
+
 ## Examples
 
 ### Example 1: Using `document.write`
-    <script>document.write(myExpensiveFunction());</script>
+```html
+<script>document.write(myExpensiveFunction());</script>
+```
 
 ### Example 2: Deferring an external JavaScript file
-    lady.defer({
-        url: 'http://www.example.com/js.js',//external script
-        fn:  function(el) {//oncomplete callback
-            el.parentNode.removeChild(el);//remove target from DOM
-        }
-    });
+```javascript
+lady.defer({
+    url: 'http://www.example.com/js.js',//external script
+    fn:  function(el) {//oncomplete callback
+        el.parentNode.removeChild(el);//remove target from DOM
+    }
+});
+```
 
 ### Example 3: Deferring a function
-    lady.defer({
-        id:   'function-result-dom-element',//target
-        data: function() {//code to execute asynchronously
-            // Executed in window context
-            myExpensiveFunction();
-        },
-        fn:   function(el) {//oncomplete callback
-            console.log('myExpensiveFunction() result: ', el.innerHTML);
-        }
-     });
+```javascript
+lady.defer({
+    id:   'function-result-dom-element',//target
+    data: function() {//code to execute asynchronously
+        // Executed in window context
+        myExpensiveFunction();
+    },
+    fn:   function(el) {//oncomplete callback
+        console.log('myExpensiveFunction() result: ', el.innerHTML);
+    }
+});
+```
 
 ### Example 4: Deferring DOM nodes
-    lady.defer({
-        id:   'function-result-dom-element',//target
-        data: '<script>myExpensiveFunction();</script>'//nodes to insert
-    });
+```javascript
+lady.defer({
+    id:   'function-result-dom-element',//target
+    data: '<script>myExpensiveFunction();</script>'//nodes to insert
+});
+```
 
 ### Example 5: Rendering deferreds
-    // Doesn't work in IE<9
-    document.addEventListener('DOMContentLoaded, function() {
-        lady.render();
-    }, false);
+ ```javascript
+// Doesn't work in IE<9
+document.addEventListener('DOMContentLoaded, function() {
+    lady.render();
+}, false);
+```
 
 ### Example 6: parsing AJAX responses
-     // Assume response resides in request.responseText
-     lady.defer({
-         id:   'ajax-result-dom-element',//target
-         data: request.responseText
-     }).render();
+```javascript
+// Assume response resides in request.responseText
+lady.defer({
+    id:   'ajax-result-dom-element',//target
+    data: request.responseText
+}).render();
+```
 
 ### Example 7: Placeholders
 #### Example 7a: captured `document.write(ln)`
-    <span class="lady lady-capture" id="lady-<i>-<time>"></span>
+```html
+<span class="lady lady-capture" id="lady-<i>-<time>"></span>
+```
 
 #### Example 7b: `defer()` with `id` unknown or unspecified
-    <span class="lady lady-mock" id="lady-<i>-<time>"></span>
+```html
+<span class="lady lady-mock" id="lady-<i>-<time>"></span>
+```
 
 #### Example 7c: `defer()` with `id` specified
-    <span class="<your-classes> lady" id="<your-id>"></span>
+```html
+<span class="<your-classes> lady" id="<your-id>"></span>
+```
 
 More examples can be found in the demos folder. Just play around with Lady yourself and you’ll see.
 
-- - -
+
 ## License
 Since Lady is still in beta, you should probably test all your ad code before pushing it live.
 
-Lady is written by Markably, http://www.markably.com, and is available under the New BSD License.
+Lady is written by [Markably] (http://www.markably.com), and is available under the New BSD License.
