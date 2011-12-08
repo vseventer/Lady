@@ -37,7 +37,7 @@ test('Capture', function() {
 
 	// Test state
 	deepEqual(this.lady.capture(), this.lady, 'Return value');
-	deepEqual(this.lady._write, old, '_: Document.write original');
+	deepEqual(this.lady._document.write, old, '_: Document.write original');
 	notDeepEqual(document.write, old, 'Document.write overrided');
 
 	// Test capture
@@ -150,5 +150,7 @@ test('Render', function() {
  * @returns String
  */
 String.prototype.strip = function() {
-	return this.replace(/\r|\n/g, '').toLowerCase();
+	return this.replace(/\r|\n/g, '')
+	           .replace(/<script.*?<\/script>/gi, '')//remove script
+	           .toLowerCase();
 };

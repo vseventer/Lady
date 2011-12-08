@@ -11,7 +11,9 @@
 <script>document.write('<script src="demo.js"><\/script>');</script>
 <script>
 window.onload = function() {
-	lady.render();
+	lady.render(function() {
+		lady.restore();//restore original document.write
+	});
 };
 </script>
 </body>

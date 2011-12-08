@@ -1,54 +1,93 @@
 /*!
  * Queue
  * 
- * Asynchronous job queue.
+ * Asynchronous job chain
  * 
- * @version v1.0b2
+ * @version v1.0b3
  * @author Markably
  * @link http://www.markably.com
  * @copyright (c) Markably
  */
 
 /*jslint browser: true, nomen: true, white: true*/
-;(function() {
+;(function(window) {
 	'use strict';
 
 	/**
-	 * Queue: queue for asynchronous callbacks
+	 * Queue
 	 * 
-	 * @access public 
+	 * @access public
+	 * @param boolean instant (optional, defaults to true)
 	 */
-	function Queue() {
+	function Queue(instant) {
 		/**
-		 * List of jobs
+		 * Instant
+		 * @access private
+		 * @var boolean _instant
+		 */
+		this._instant = 'undefined' === typeof instant || instant || false;
+
+		/**
+		 * Jobs
 		 * @access private
 		 * @var Array _jobs
 		 */
 		this._jobs = [];
+
+		/**
+		 * Pending jobs (instant mode)
+		 * @access private
+		 * @var integer _pending
+		 */
+		this._pending = 0;
 	}
 
 	/**
-	 * Adds element to queue
+	 * Adds job to queue
 	 * 
 	 * @access public
-	 * @param function fn (oncomplete)
+	 * @param function fn
 	 * @returns Queue (fluent interface)
 	 */
 	Queue.prototype.add = function(fn) {
 		this._jobs.push(fn);
+
+		// Instant queue
+		if(this._instant) {
+			this._pending += 1;
+			if(1 === this._pending) {
+				var shift = (function(context) {
+				    return function() {
+						context._pending -= 1;
+						if(0 < context._pending) {
+							context._jobs.shift()(shift);
+						}
+				    };
+				}(this));
+				this._jobs.shift()(shift);
+			}
+		}
 		return this;
 	};
 
 	/**
-	 * Removes element from queue
-	 * NOTE passed to element as callback, effectively flushing whole queue
+	 * Flushes queue
 	 * 
-	 * @access public
-	 * @param function fn (oncomplete, optional)
+	 * @param function fn (optional, oncomplete)
 	 * @returns void
 	 */
 	Queue.prototype.flush = function(fn) {
-		if(0 === this.length()) {//complete
+		// Instant queues are already being processed
+		if(this._instant) {
+			fn && this.add(function(sfn) {
+				sfn && sfn();//shift fn
+				fn  && fn();//queue fn
+			});
+			return;
+		}
+
+		// Waiting queue
+		if(0 === this._jobs.length) {
 			fn && fn();
 		}
 		else {
@@ -61,7 +100,7 @@
 	};
 
 	/**
-	 * Returns queue length
+	 * Returns number of jobs
 	 * 
 	 * @access public
 	 * @returns integer
@@ -72,4 +111,4 @@
 
 	// Expose
 	window.Queue = Queue;
-}());
+}(window));
