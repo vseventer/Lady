@@ -20,6 +20,7 @@ Lady supports `document.close`, `document.open`, `document.write` and `document.
 No external library is needed to run Lady. Also, no explicit `eval`-calls are made (except to circumvent a Firefox bug). Ad codes are evil enough by themselves, aren’t they? In principal, the code rendered by Lady should be a 1-to-1 copy of its deferred.
 
 Lady is tested succesfully in:
+
 * Chrome 15 and up,
 * Firefox 3 and up,
 * Internet Explorer 7 and up (not IE6),
@@ -152,6 +153,6 @@ More examples can be found in the demos folder. Just play around with Lady yours
 
 
 ## License
-Since Lady is still in beta, you should probably test all your ad code before pushing it live.
+Since Lady is still in development, you should probably test all your ad code before pushing it live.
 
 Lady is written by [Markably] (http://www.markably.com), and is available under the New BSD License.
