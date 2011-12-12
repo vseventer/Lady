@@ -8,7 +8,7 @@
  * No external library is required, and no eval is used. The resulting code
  * is exactly the same as before, only all is done asynchronously.
  * 
- * @version v1.0b3
+ * @version v1.0dev
  * @author Markably
  * @link http://www.markably.com
  * @copyright (c) Markably
@@ -61,12 +61,12 @@
 			this._pending += 1;
 			if(1 === this._pending) {
 				var shift = (function(context) {
-				    return function() {
+					return function() {
 						context._pending -= 1;
 						if(0 < context._pending) {
 							context._jobs.shift()(shift);
 						}
-				    };
+					};
 				}(this));
 				this._jobs.shift()(shift);
 			}
@@ -77,6 +77,7 @@
 	/**
 	 * Flushes queue
 	 * 
+	 * @access public
 	 * @param function fn (optional, oncomplete)
 	 * @returns void
 	 */
@@ -148,24 +149,8 @@
 	 */
 	Lady.prototype.capture = function() {
 		var buffer = '',
-			stream = 0,//level
-			target,
-
-			// Generic write overwrite
-			write = function(context, sep) {
-				return function() {
-					buffer += [].concat.apply([], arguments).join(sep) + sep;//join argv
-					if(0 === stream) {
-						var id = context._id();
-						context.defer({ id: id, data: buffer })
-						       ._document.write.call(
-							this,
-							'<span class="lady-capture" id="' + id + '"></span>'
-						);
-						buffer = '';//reset
-					}
-				};
-			};
+		    stream = 0,//level
+		    target;
 
 		// Overwrite native implementations
 		document.close   = (function(context) {
@@ -189,8 +174,23 @@
 				}
 			};
 		}(this));
-		document.write   = write(this, '');
-		document.writeln = write(this, "\n");
+		document.write   = (function(context) {
+			return function() {
+				buffer += [].concat.apply([], arguments).join('');//join argv
+				if(0 === stream) {
+					var id = context._id();
+					context.defer({ id: id, data: buffer })
+					       ._document.write.call(
+						this,
+						'<span class="lady-capture" id="' + id + '"></span>'
+					);
+					buffer = '';//reset
+				}
+			};
+		}(this));
+		document.writeln = function() {//forward call to document.write
+			document.write([].concat.apply([], arguments).join("\n") + "\n");//join argv
+		};
 		return this;
 	};
 
@@ -204,8 +204,8 @@
 	Lady.prototype.defer = function(options) {
 		// Juggle parameters
 		var id  = options.id || this._id(),
-			data,
-			dfn = options.fn || function() { };
+		    data,
+		    dfn = options.fn || function() { };
 
 		// Data
 		if(options.url) {//URL
@@ -222,7 +222,7 @@
 			return function(fn) {
 				var target = document.getElementById(id) || null;
 				if(null === target) {//mock target
-					target           = document.createElement('div');
+					target           = document.createElement('span');
 					target.className = 'lady-mock';
 					target.id        = id;
 					document.body.appendChild(target);
@@ -280,7 +280,7 @@
 	Lady.prototype._id = (function() {
 		var i = 0;//static
 		return function() {
-			return '_lady-' + (i += 1) + '-' + new Date().getTime();
+			return 'lady-' + (i += 1) + '-' + new Date().getTime();
 		};
 	}());
 
@@ -295,7 +295,7 @@
 	Lady.prototype._import = function(node, deep) {
 		deep = 'undefined' === typeof deep || deep || false;
 		if(document.implementation.createHTMLDocument && document.createRange
-	     && document.createRange().createContextualFragment) {
+		 && document.createRange().createContextualFragment) {
 			return document.importNode(node, deep);
 		}
 
@@ -363,12 +363,12 @@
 	 */
 	Lady.prototype._inject = function(node, target, fn) {
 		var context = this,
-			i,
-			newNode,
-			queue   = new Queue(),
+		    i,
+		    newNode,
+		    queue   = new Queue(),
 
-			// Called in loop below to keep context
-			enqueue = function(context, node, target) { 
+		    // Called in loop below to keep context
+		    enqueue = function(context, node, target) { 
 				queue.add(function(fn) {
 					context._inject(node, target, fn);
 				});
@@ -402,39 +402,26 @@
 	 */
 	Lady.prototype._injectScript = function(node, target, fn) {
 		var context   = this,
-			script    = this._import(node, true),//deep
-			queue     = new Queue(),
+		    script    = this._import(node, true),//deep
+		    queue     = new Queue(),
 
-			// Control flow
-			buffer    = '',
-			stream    = 0,//level
+		    // Control flow
+		    buffer    = '',
+		    stream    = 0,//level
 
-			// Local document.* overwrites
-			_document = {
+		    // Local document.* overwrites
+		    _document = {
 				open:    document.open,
 				close:   document.close,
 				write:   document.write,
 				writeln: document.writeln
 			},
-			restore   = function() {//restores previous document.*
+		    restore   = function() {//restores previous document.*
 				document.close   = _document.close;
 				document.open    = _document.open;
 				document.write   = _document.write;
 				document.writeln = _document.writeln;
-			},
-			write     = function(sep) {
-				return function() {
-					buffer += [].concat.apply([], arguments).join(sep) + sep;//join argv
-					if(0 === stream && context._validate(buffer)) {
-						(function(buffer) {
-							queue.add(function(fn) {
-								context._render(buffer, target, fn);
-							});							
-						}(buffer));
-						buffer = '';//reset
-					}
-				};
-			};
+		    };
 
 		// Overwrite native implementations
 		document.close   = function() {
@@ -451,20 +438,34 @@
 		document.open    = function() {
 			stream += 1;
 		};
-		document.write   = write('');
-		document.writeln = write("\n");
+		document.write   = function() {
+			buffer += [].concat.apply([], arguments).join('');//join argv
+			if(0 === stream && context._validate(buffer)) {
+				(function(buffer) {
+					queue.add(function(fn) {
+						context._render(buffer, target, fn);
+					});							
+				}(buffer));
+				buffer = '';//reset
+			}
+		};
+		document.writeln = function() {//forward call to document.write
+			document.write([].concat.apply([], arguments).join("\n") + "\n");//join argv
+		};
 
 		// Resource
 		if((script.hasAttribute && script.hasAttribute('src')) || script.src) {//external
-			script.onreadystatechange = function() {//IE<9
-				var state = this.readyState.toLowerCase();
-				if('complete' === state || 'loaded' === state) {
-					this.onload();
+			if('undefined' === typeof script.onload) {//IE<9
+				script.onreadystatechange = function() {
+					var state = this.readyState.toLowerCase();
+					if('complete' === state || 'loaded' === state) {
+						this.onload();
 
-					// IE9 fires both onreadystatechange and onload, so deattach
-					this.onerror = this.onload = this.onreadystatechange = null;
-				}
-			};
+						// Deattach callback
+						this.onreadystatechange = null;
+					}
+				};
+			}
 			script.onerror = script.onload = function() {
 				if('' !== buffer) {//remaining buffer
 					queue.add(function(fn) {
@@ -479,6 +480,14 @@
 			target.appendChild(script);
 		}
 		else {//internal
+			// NOTE Firefox<4 executes inline scripts asynchronously
+			// @link http://www.softwareishard.com/blog/firebug/script-execution-analysis-in-firefox-4/
+			if(false === script.async) {//execute synchronously
+				window['eval'].call(window, script.text);
+				script.text = '';//reset to avoid double execution
+			}
+
+			// Insert and evaluate node
 			target.appendChild(script);
 			if('' !== buffer) {//remaining buffer
 				queue.add(function(fn) {
@@ -503,11 +512,11 @@
 	 */
 	Lady.prototype._render = function(str, target, fn) {
 		var nodelist = this._tokenize(str),
-			i,
-			queue    = new Queue(),
+		    i,
+		    queue    = new Queue(),
 
-			// Called in loop below to keep context
-			enqueue  = function(context, node) {
+		    // Called in loop below to keep context
+		    enqueue  = function(context, node) {
 				queue.add(function(fn) {
 					context._inject(node, target, fn);
 				});
@@ -529,12 +538,12 @@
 	 */
 	Lady.prototype._tokenize = function(str) {
 		var doc,
-			mock,
-			range;
+		    mock,
+		    range;
 
 		// Fragmentize
 		if(document.implementation.createHTMLDocument && document.createRange
-	     && document.createRange().createContextualFragment) {
+		 && document.createRange().createContextualFragment) {
 			doc   = document.implementation.createHTMLDocument('tokenizer');
 			mock  = doc.createElement('div');
 			range = doc.createRange();
@@ -563,7 +572,7 @@
 		// @link http://haacked.com/archive/2004/10/25/usingregularexpressionstomatchhtml.aspx
 		// NOTE self-closing tags do not matter
 		var open  = str.match(/<\w+(?:(?:\s+\w+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^'">\s]+))?)+\s*|\s*)>/, str),
-			close = str.match(/<\/\w+\s*>/, str);
+		    close = str.match(/<\/\w+\s*>/, str);
 		return open === close || (open && close && open.length === close.length);
 	};
 

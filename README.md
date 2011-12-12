@@ -15,15 +15,20 @@ When you have deferred multiple unrelated scripts, you want them to execute in p
 
 
 ## Support
-Lady supports `document.close`, `document.open`, `document.write` and `document.writeln`. Moreover, deferreds are rendered using speculative parsing. More about this can be read here: https://developer.mozilla.org/en/HTML/HTML5/HTML5_Parser#Performance_improvement_with_speculative_parsing
+Lady supports `document.close`, `document.open`, `document.write` and `document.writeln`. Moreover, deferreds are rendered using speculative parsing. More about this can be read [here] (https://developer.mozilla.org/en/HTML/HTML5/HTML5_Parser#Performance_improvement_with_speculative_parsing).
 
-No external library is needed to run Lady. Also, no explicit `eval`-calls are made. Ad codes are evil enough by themselves, aren’t they? In principal, the code rendered by Lady should be a 1-to-1 copy of its deferred.
+No external library is needed to run Lady. Also, no explicit `eval`-calls are made (except to circumvent a Firefox bug). Ad codes are evil enough by themselves, aren’t they? In principal, the code rendered by Lady should be a 1-to-1 copy of its deferred.
 
-Lady is tested succesfully in all major browsers, including Internet Explorer 7 and 8. IE6 is not supported.
+Lady is tested succesfully in:
+* Chrome 15 and up,
+* Firefox 3 and up,
+* Internet Explorer 7 and up (not IE6),
+* Opera 11 and up,
+* Safari 5 and up.
 
 
 ## Caveats
-Although I think Lady is production ready, some ad providers will eventually screw up. During the development, I got surprised by the horrible code ad providers are putting us through. So, be warned.
+Although I think Lady is almost production ready, some ad providers will eventually screw up. During the development, I got surprised by the horrible code ad providers are putting us through. So, be warned.
 
 When you come along a piece of JavaScript that is not supported, drop me a line and I will look into it.
 
@@ -43,7 +48,7 @@ Or, if you want to enable autocapture, use:
 <script>var lady = new Lady().capture();</script>
 ```
 
-When using autocapture, `document.write` calls will automatically be deferred. A placeholder is injected in its place.
+When using autocapture, root `document.write` calls will automatically be deferred. A placeholder is injected in its place.
 
 For more advanced users, explicit defers can be used as follows:
 
@@ -63,8 +68,10 @@ Available `options` :
 When the document is loaded, you want Lady to render all deferred items. This can be done by calling:
 
 ```javascript
-lady.render();
+lady.render([fn]);
 ```
+
+`fn`: oncomplete function, no arguments. 
 
 Target elements need to be present in the DOM when calling `render()`, otherwise a mock container is created. 
 

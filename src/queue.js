@@ -3,7 +3,7 @@
  * 
  * Asynchronous job chain
  * 
- * @version v1.0b3
+ * @version v1.0dev
  * @author Markably
  * @link http://www.markably.com
  * @copyright (c) Markably
@@ -73,6 +73,7 @@
 	/**
 	 * Flushes queue
 	 * 
+	 * @access public
 	 * @param function fn (optional, oncomplete)
 	 * @returns void
 	 */
