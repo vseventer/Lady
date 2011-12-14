@@ -205,7 +205,7 @@
 		// Juggle parameters
 		var id  = options.id || this._id(),
 		    data,
-		    dfn = options.fn || function() { };
+		    dfn = options.fn;
 
 		// Data
 		if(options.url) {//URL
@@ -557,7 +557,7 @@
 		mock = document.createElement('div');
 		mock.innerHTML = '<input type="hidden" />'//add scoped element
 			           + str.replace(/ (src|value)=/g, ' _$1=');//avoid resource preloading
-		mock.removeChild(mock.childNodes.item(0));//remove scoped element
+		mock.removeChild(mock.firstChild);//remove scoped element
 		return mock.childNodes;
 	};
 
