@@ -10,19 +10,18 @@
 <h1>Lady Demos - Adsense</h1>
 <div id="container"></div>
 <script>
-window.onload = lady.defer({
-	data: function() {
+window.onload = function() {
+	lady.defer(function() {
 		google_ad_client = "pub-0000000000000000";
-		// your adsense code
-	},
-	fn:   function(el) {
+		// Your adsense code 
+	}, function(el) {
 		el.parentNode.removeChild(el);//remove useless node
 		lady.defer({
-			id:  'container',//adsense target
-			url: 'http://pagead2.googlesyndication.com/pagead/show_ads.js'
+			target: 'container',//adsense target
+			data:   'http://pagead2.googlesyndication.com/pagead/show_ads.js'
 		}).render();
-	}
-}).render();
+	}).render();
+};
 </script>
 </body>
 </html>

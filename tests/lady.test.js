@@ -20,126 +20,113 @@ module('Lady (async)', {
 // Constructor
 test('Constructor', function() {
 	equals(typeof this.lady, 'object', 'Constructor');
-});
 
-//Defer
-test('Defer', function() {
-	deepEqual(this.lady.defer({ data: 'foo' }), this.lady, 'Return value');
+	deepEqual(this.lady.defer({
+		target: document.getElementById('qunit-fixture'),
+		data:   function() { }
+	}), this.lady, 'Return value');
 	strictEqual(this.length(), 1, 'Added one defer');
 
-	this.lady.defer({ data: 'bar' });
+	this.lady.defer({
+		target: document.getElementById('qunit-fixture'),
+		data:   function() { }
+	});
 	strictEqual(this.length(), 2, 'Added another defer');
 });
 
-// Capture
-test('Capture', function() {
-	var old = document.write;
+// Defer
+test('Defer', function() {
+	QUnit.stop(2);
 
-	// Test state
-	deepEqual(this.lady.capture(), this.lady, 'Return value');
-	deepEqual(this.lady._document.write, old, '_: Document.write original');
-	notDeepEqual(document.write, old, 'Document.write overrided');
+	this.lady.defer({
+		target: document.getElementById('qunit-fixture'),
+		data:   'foo.js',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), 'bar', 'URL');
+			start();
+		}
+	});
 
-	// Test capture
-	document.write('foo');
-	strictEqual(this.length(), 1, 'Captured one element');
+	this.lady.defer({
+		target: document.getElementById('qunit-fixture'),
+		data:   function() {
+			window.foo = 'bar';
+		},
+		fn:     function() {
+			strictEqual(window.foo, 'bar', 'Function (global var)');
+			start();
+		}
+	});
 
-	document.write('bar');
-	strictEqual(this.length(), 2, 'Captured another element');
+	// Fire
+	this.lady.render();
 });
 
-// Render
-// NOTE we don’t use qunit-fixture, since clearing doesn’t work async
-test('Render', function() {
-	QUnit.stop(14);
+// Parse
+test('Parse', function() {
+	QUnit.stop(12);
 
-	this.lady.defer({ data: 'foo', fn: function(el) {
+	this.lady.parse('foo', function(el) {
 		strictEqual(el.innerHTML.strip(), 'foo', 'Textnode');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ data: function() {
-		document.write('foo');
-	}, fn: function(el) {
-		strictEqual(el.innerHTML.strip(), 'foo', 'Textnode as function');
-		el.parentNode && el.parentNode.removeChild(el);
-		start();
-	}});
-
-	this.lady.defer({ data: '<p></p>', fn: function(el) {
+	this.lady.parse('<p></p>', function(el) {
 		strictEqual(el.innerHTML.strip(), '<p></p>', 'Node');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ data: '<p>foo</p>', fn: function(el) {
+	this.lady.parse('<p>foo</p>', function(el) {
 		strictEqual(el.innerHTML.strip(), '<p>foo</p>', 'Node with text');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ data: 'foo<p></p>', fn: function(el) {
+	this.lady.parse('foo<p></p>', function(el) {
 		strictEqual(el.innerHTML.strip(), 'foo<p></p>', 'Sibling text- and node');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ data: '<div></div><p>bar</p>', fn: function(el) {
+	this.lady.parse('<div></div><p>bar</p>', function(el) {
 		strictEqual(el.innerHTML.strip(), '<div></div><p>bar</p>', 'Sibling nodes');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ data: '<p><small></small></p>', fn: function(el) {
+	this.lady.parse('<p><small></small></p>', function(el) {
 		strictEqual(el.innerHTML.strip(), '<p><small></small></p>', 'Nested nodes');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ data: '<p>foo<small>bar</small>baz</p>', fn: function(el) {
+	this.lady.parse('<p>foo<small>bar</small>baz</p>', function(el) {
 		strictEqual(el.innerHTML.strip(), '<p>foo<small>bar</small>baz</p>', 'Nested nodes with text');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ data: '<script>document.write("foo");</script>', fn: function(el) {
+	this.lady.parse('<script>document.write("foo");</script>', function(el) {
 		strictEqual(el.innerHTML.strip(), 'foo', 'Recursive');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ data: '<p><script>document.write("<small>foo</small>");</script></p>', fn: function(el) {
+	this.lady.parse('<p><script>document.write("<small>foo</small>");</script></p>', function(el) {
 		strictEqual(el.innerHTML.strip(), '<p><small>foo</small></p>', 'Nested recursive');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	} });
+	});
 
-	this.lady.defer({ url: 'foo.js', fn: function(el) {
-		strictEqual(el.innerHTML.strip(), 'bar', 'Include as URL');
-		el.parentNode && el.parentNode.removeChild(el);
-		start();
-	} });
-
-	this.lady.defer({ data: '<script src="foo.js"></script>', fn: function(el) {
+	this.lady.parse('<script src="foo.js"></script>', function(el) {
 		strictEqual(el.innerHTML.strip(), 'bar', 'Include as node');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	}});
+	});
 
-	this.lady.defer({ data: '<script src="foo.js"></script><script src="foo.js"></script>', fn: function(el) {
+	this.lady.parse('<script src="foo.js"></script><script src="foo.js"></script>', function(el) {
 		strictEqual(el.innerHTML.strip(), 'barbar', 'Sibling includes');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	}});
+	});
 
-	this.lady.defer({ data: '<script src="baz.js"></script>', fn: function(el) {
+	this.lady.parse('<script src="baz.js"></script>', function(el) {
 		strictEqual(el.innerHTML.strip(), 'bar', 'Nested includes');
-		el.parentNode && el.parentNode.removeChild(el);
 		start();
-	}});
+	});
 
-	// Run
+	// Fire
 	this.lady.render();
 });
 

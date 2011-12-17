@@ -10,9 +10,6 @@ By walking the DOM node by node, Lady is able to insert scripts at the designate
 ### Nesting
 Nesting of `document.write` is supported. Since Lady uses DOM manipulation techniques, they will be rendered where they are supposed to be. To make sure all deferreds are rendered in order, Lady uses an asynchronous queue.
 
-### Parallelization
-When you have deferred multiple unrelated scripts, you want them to execute in parallel. Although this is not a feature of Lady, you can simply create multiple instances to simulate this behavior.
-
 
 ## Support
 Lady supports `document.close`, `document.open`, `document.write` and `document.writeln`. Moreover, deferreds are rendered using speculative parsing. More about this can be read [here] (https://developer.mozilla.org/en/HTML/HTML5/HTML5_Parser#Performance_improvement_with_speculative_parsing).
@@ -43,61 +40,77 @@ Include Lady in the `head`:
 <script>var lady = new Lady();</script>
 ```
 
-Or, if you want to enable autocapture, use:
+In order for Lady to defer `document.write`, you should use the API. Existing code will not magically be converted. Using `document.write` in the body directly is deprecated anyway.
 
-```html
-<script>var lady = new Lady().capture();</script>
-```
-
-When using autocapture, root `document.write` calls will automatically be deferred. A placeholder is injected in its place.
-
-For more advanced users, explicit defers can be used as follows:
+Defers can be created as follows:
 
 ```javascript
-lady.defer({options});
+lady.defer(data, fn);
+lady.defer({ options });
+
+/*
+Arguments and options:
+target: target element, either a live HTMLElement, or id string,
+data:   URL or function to be executed asynchronously,
+html:   snippet of HTML to be parsed (deprecated),
+fn:     oncomplete function, target element is passed as argument.
+*/
 ```
 
-Available `options` :
+`html` and `data` are mutually exclusive. Both `target` and `fn` are optional. If no `target` is specified, a placeholder will be inserted.
 
-    id:   target element, specified by id,
-    data: String or function to be executed asynchronously,
-    url:  JavaScript file to be executed asynchronously,
-    fn:   oncomplete function, target element is passed as argument.
+For parsing HTML snippets, the following shortcut is available:
 
-`data` and `url` are mutually exclusive. Both `id` and `fn` are optional. If no `id` specified, the placeholder will be appended to `body`.
+```javascript
+lady.parse(html, fn);
+
+/*
+Arguments:
+html: HTML string
+fn:   oncomplete function, target element is passed as argument. Target element is detached from actual DOM.
+*/
+```
 
 When the document is loaded, you want Lady to render all deferred items. This can be done by calling:
 
 ```javascript
 lady.render([fn]);
+
+/*
+Arguments:
+fn: oncomplete function, no arguments. 
+*/
 ```
 
-`fn`: oncomplete function, no arguments. 
-
-Target elements need to be present in the DOM when calling `render()`, otherwise a mock container is created. 
+Target elements need to be present in the DOM when calling `render()`, otherwise a mock container is created. When inserting deferreds after onload, Lady will append placeholders to the `body`. 
 
 
 ## Examples
 
-### Example 1: Using `document.write`
-```html
-<script>document.write(myExpensiveFunction());</script>
-```
-
-### Example 2: Deferring an external JavaScript file
+### Example 1: Deferring an external JavaScript file
 ```javascript
+lady.defer('http://www.example.com/js.js');
+
+// or
+
 lady.defer({
-    url: 'http://www.example.com/js.js',//external script
-    fn:  function(el) {//oncomplete callback
-        el.parentNode.removeChild(el);//remove target from DOM
-    }
+	target: 'id',
+	data:   'http://www.example.com/js.js'
 });
 ```
 
-### Example 3: Deferring a function
+### Example 2: Deferring a function
 ```javascript
+lady.defer(function() {
+	myExpensiveFunction();
+}, function(el) {
+	console.log('myExpensiveFunction() result: ', el.innerHTML);
+});
+
+// or
+
 lady.defer({
-    id:   'function-result-dom-element',//target
+    id:   'id',//target
     data: function() {//code to execute asynchronously
         // Executed in window context
         myExpensiveFunction();
@@ -108,45 +121,38 @@ lady.defer({
 });
 ```
 
-### Example 4: Deferring DOM nodes
-```javascript
-lady.defer({
-    id:   'function-result-dom-element',//target
-    data: '<script>myExpensiveFunction();</script>'//nodes to insert
-});
-```
-
-### Example 5: Rendering deferreds
+### Example 3: Rendering deferreds
  ```javascript
 // Doesn't work in IE<9
-document.addEventListener('DOMContentLoaded, function() {
+document.addEventListener('DOMContentLoaded', function() {
     lady.render();
 }, false);
 ```
 
-### Example 6: parsing AJAX responses
+### Example 4: parsing AJAX responses
 ```javascript
 // Assume response resides in request.responseText
-lady.defer({
-    id:   'ajax-result-dom-element',//target
-    data: request.responseText
+lady.parse(request.responseText, function(el) {
+    document.getElementById('target').appendChild(el);
 }).render();
 ```
 
-### Example 7: Placeholders
-#### Example 7a: captured `document.write(ln)`
+### Example 5: Placeholders
+#### Example 5a: existent target
 ```html
-<span class="lady lady-capture" id="lady-<i>-<time>"></span>
+<!-- Assume target is div#target -->
+<div class="<target-classes> lady" id="target"></div>
 ```
 
-#### Example 7b: `defer()` with `id` unknown or unspecified
+#### Example 5b: non-existent target specified
 ```html
-<span class="lady lady-mock" id="lady-<i>-<time>"></span>
+<!-- Assume target id is target -->
+<span class="lady-mock lady" id="target"></span>
 ```
 
-#### Example 7c: `defer()` with `id` specified
+#### Example 5c: no target specified
 ```html
-<span class="<your-classes> lady" id="<your-id>"></span>
+<span class="lady-mock lady"></span>
 ```
 
 More examples can be found in the demos folder. Just play around with Lady yourself and you’ll see.

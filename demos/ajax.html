@@ -15,9 +15,8 @@ window.onload = function() {
 	request.open('GET', '_ajax.html', true);
 	request.onreadystatechange = function() {
 		if(4 === this.readyState && 200 === this.status) {
-			lady.defer({
-				id:   'target',
-				data: this.responseText
+			lady.parse(this.responseText, function(el) {
+				document.getElementById('target').appendChild(el);
 			}).render();
 		}
 	};

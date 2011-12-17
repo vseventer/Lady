@@ -134,116 +134,112 @@
 		};
 
 		/**
+		 * Document state
+		 * @access private
+		 * @var boolean _loaded
+		 */
+		this._loaded = false;
+
+		/**
 		 * Deferred queue
 		 * @access private
 		 * @var Queue _queue
 		 */
 		this._queue = new Queue(false);
+
+		// Constructor
+		var listener = (function(context) {
+			return function() {
+				context._loaded = true;
+			};
+		}(this));
+		if(document.addEventListener) {
+			document.addEventListener('DOMContentLoaded', listener, false);
+		}
+		else {//mostly IE9
+			document.onreadystatechange = function() {
+				// Interactive equals DOMContentLoaded, but doesn't always fire
+				if(this.readyState.match(/interactive|complete/)) {
+					this.onreadystatechange = null;//unbind
+					listener();
+				}
+			};
+		}
 	}
-
-	/**
-	 * Enables autocapturing
-	 * 
-	 * @access public
-	 * @returns Lady (fluent interface)
-	 */
-	Lady.prototype.capture = function() {
-		var buffer = '',
-		    stream = 0,//level
-		    target;
-
-		// Overwrite native implementations
-		document.close   = (function(context) {
-			return function() {
-				stream -= 1;
-				if(0 === stream) {//end stream
-					context._defer({ id: target, data: buffer });
-					buffer = '';//reset
-				}
-			};
-		}(this));
-		document.open    = (function(context) {
-			return function() {
-				stream += 1;
-				if(1 === stream) {//start stream
-					target = context._id();
-					context._document.write.call(//placeholder
-						this,
-						'<span class="lady-capture" id="' + target + '"></span>'
-					);
-				}
-			};
-		}(this));
-		document.write   = (function(context) {
-			return function() {
-				buffer += [].concat.apply([], arguments).join('');//join argv
-				if(0 === stream) {
-					var id = context._id();
-					context.defer({ id: id, data: buffer })
-					       ._document.write.call(
-						this,
-						'<span class="lady-capture" id="' + id + '"></span>'
-					);
-					buffer = '';//reset
-				}
-			};
-		}(this));
-		document.writeln = function() {//forward call to document.write
-			document.write([].concat.apply([], arguments).join("\n") + "\n");//join argv
-		};
-		return this;
-	};
 
 	/**
 	 * Defers snippet
 	 * 
 	 * @access public
-	 * @param object options
+	 * @param function|object|string options
+	 * @param function fn (optional, oncomplete)
 	 * @returns Lady (fluent interface)
 	 */
-	Lady.prototype.defer = function(options) {
+	Lady.prototype.defer = function(options, fn) {
 		// Juggle parameters
-		var id  = options.id || this._id(),
-		    data,
-		    dfn = options.fn;
-
-		// Data
-		if(options.url) {//URL
-			data = '<script src="' + options.url + '"></script>';
+		if('object' !== typeof options) {//plain
+			options = {	data: options, fn: fn };
 		}
-		else {//inline
-			data = 'function' === typeof options.data
-			     ? '<script>(' + options.data + ').call(window);</script>'
-			     : options.data;
-		}
+		options.data   = options.html || ('string' === typeof options.data
+                       ? '<script src="' + options.data + '"></script>'//URL
+	                   : '<script>(' + options.data + ').call(window);</script>');//function
+		options.target = options.target || this._mock();                   
 
 		// Enqueue
 		this._queue.add((function(context) {
 			return function(fn) {
-				var target = document.getElementById(id) || null;
-				if(null === target) {//mock target
-					target           = document.createElement('span');
-					target.className = 'lady-mock';
-					target.id        = id;
-					document.body.appendChild(target);
+				// Target
+				if('object' !== typeof options.target) {//append to body
+					options.target = document.getElementById(options.target);
+					if(!options.target) {//still non-existent, mock
+						options.target = document.createElement('span');
+						options.target.className = 'lady-mock';
+						document.body.appendChild(options.target);
+					}
 				}
 
 				// Add class
-				if(target.classList) {
-					target.classList.add('lady');
+				if(options.target.classList) {//HTML5 API
+					options.target.classList.add('lady');
 				}
-				else {
-					target.className += ' lady';
+				else if(!options.target.className.match(/(?:^|\s)lady(?:\s|$)/)) {
+					options.target.className +=
+					 ('' !== options.target.className ? ' ' : '') + 'lady';
 				}
 
 				// Render
-				context._render(data, target, function() {
-					fn  && fn();//queue fn
-					dfn && dfn(target);//defer fn
+				context._render(options.data, options.target, function() {
+					fn         && fn();//queue fn
+					options.fn && options.fn(options.target);//defer fn
 				});
 			};
 		}(this)));
 		return this;
+	};
+
+	/**
+	 * Parses HTML snippet
+	 * 
+	 * @access public
+	 * @param string str
+	 * @param function fn (optional, oncomplete)
+	 * @returns Lady (fluent interface)
+	 */
+	Lady.prototype.parse = function(str, fn) {
+		// Create target
+		var target = document.createElement('span');
+		target.className = 'lady-parse lady';
+		document.body.appendChild(target);
+
+		// Render
+		return this.defer({
+			fn:     function(el) {
+				document.body.removeChild(el);//remove from DOM
+				fn && fn(el);
+			},
+			html:   str,
+			target: target
+		});
 	};
 
 	/**
@@ -256,33 +252,6 @@
 	Lady.prototype.render = function(fn) {
 		this._queue.flush(fn);
 	};
-
-	/**
-	 * Restores native document.*
-	 * 
-	 * @access public
-	 * @returns Lady (fluent interface)
-	 */
-	Lady.prototype.restore = function() {
-		document.close   = this._document.close;
-		document.open    = this._document.open;
-		document.write   = this._document.write;
-		document.writeln = this._document.writeln;
-		return this;
-	};
-
-	/**
-	 * Returns unique id
-	 * 
-	 * @access private
-	 * @returns string
-	 */
-	Lady.prototype._id = (function() {
-		var i = 0;//static
-		return function() {
-			return 'lady-' + (i += 1) + '-' + new Date().getTime();
-		};
-	}());
 
 	/**
 	 * Imports node
@@ -380,10 +349,14 @@
 				context._injectScript(node, target, fn);
 			});
 		}
-		else {//boring node
+		else if((document.ELEMENT_NODE || 1) === node.nodeType
+		 && !node.getElementsByTagName('script').length) {//no scripts inside
+			target.appendChild(this._import(node));
+		}
+		else {//scripts somewhere
 			newNode = this._import(node, false);//shallow
 			target.appendChild(newNode);
-
+	
 			// Inject each child
 			for(i = 0; i < node.childNodes.length; i += 1) {
 				enqueue(this, node.childNodes.item(i), newNode);
@@ -439,7 +412,7 @@
 			stream += 1;
 		};
 		document.write   = function() {
-			buffer += [].concat.apply([], arguments).join('');//join argv
+			buffer += [].slice.call(arguments, 0).join('');//join argv
 			if(0 === stream && context._validate(buffer)) {
 				(function(buffer) {
 					queue.add(function(fn) {
@@ -450,7 +423,7 @@
 			}
 		};
 		document.writeln = function() {//forward call to document.write
-			document.write([].concat.apply([], arguments).join("\n") + "\n");//join argv
+			document.write([].slice.call(arguments, 0).join("\n") + "\n");//join argv
 		};
 
 		// Resource
@@ -499,6 +472,37 @@
 				fn      && fn();
 			});
 		}
+	};
+
+	/**
+	 * Mocks deferred
+	 * 
+	 * @access private
+	 * @returns HTMLElement
+	 */
+	Lady.prototype._mock = function() {
+		var target;
+		if(this._loaded) {//use DOM
+			target = document.createElement('span');
+			document.body.appendChild(target);//insert
+		}
+		else if(!document.body) {//can't write yet, use head
+			return document.head || document.getElementsByTagName('head')[0];
+		}
+		else {//body available, use document.write
+			this._document.write.call(
+				document,
+				'<span id="__lady"></span>'
+			);
+
+			// Extract HTMLElement
+			target = document.getElementById('__lady');
+			target.removeAttribute('id');
+		}
+
+		// Add class
+		target.className = 'lady-mock lady';
+		return target;
 	};
 
 	/**
