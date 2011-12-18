@@ -250,7 +250,7 @@
 				node.setAttribute('data-lady-src', node.getAttribute('src'));
 				node.removeAttribute('src');//reset
 			}
-			else {
+			else if('' !== node.text) {
 				node.setAttribute('data-lady-text', node.text);
 				node.text = '';//reset
 			}
