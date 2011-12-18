@@ -136,12 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
 ### Example 4: parsing AJAX responses
 ```javascript
 // Assume response resides in request.responseText
-lady.defer({
-    html:  request.responseText,
-    fn:    function(el) {
-        document.getElementById('target').appendChild(el);
-    },
-    clean: true//don't evaluate again when appending 
+lady.defer(request.responseText, function(el) {
+    document.getElementById('target').appendChild(el);
 }).render();
 ```
 
