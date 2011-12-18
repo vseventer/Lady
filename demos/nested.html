@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8" />
+	<title>Lady Demos - Plain</title>
+	<script src="../build/lady.min.js"></script>
+	<script>var lady = new Lady();</script>
+</head>
+<body>
+<h1>Lady Demos - Nested</h1>
+<div id="target"></div>
+<script>
+lady.defer(function() {
+	lady.defer(function() {
+		lady.defer({
+			target: 'target',
+			html: '<p>Foo</p>'
+		});
+	});
+	lady.defer(function() {
+		lady.defer(function() {
+			document.write('<p>Bar</p>');
+		});
+	});
+}).render();
+
+</script>
+</body>
+</html>
