@@ -141,11 +141,20 @@
 		this._loaded = false;
 
 		/**
-		 * Deferred queue
+		 * Deferred queue stack
 		 * @access private
-		 * @var Queue _queue
+		 * @var Array _stack
 		 */
-		this._queue = new Queue(false);
+		this._stack = [
+			new Queue(false)
+		];
+
+		/**
+		 * Mock target
+		 * @access private
+		 * @var Array _target
+		 */
+		this._target = [];
 
 		// Constructor
 		var listener = (function(context) {
@@ -186,8 +195,10 @@
 		options.target = options.target || this._mock();                   
 
 		// Enqueue
-		this._queue.add((function(context) {
+		this._stack[0].add((function(context) {
 			return function(fn) {
+				context._stack.unshift(new Queue(false));//add nesting level
+
 				// Target
 				if('object' !== typeof options.target) {//append to body
 					options.target = document.getElementById(options.target);
@@ -209,8 +220,10 @@
 
 				// Render
 				context._render(options.data, options.target, function() {
-					fn         && fn();//queue fn
-					options.fn && options.fn(options.target);//defer fn
+					context._stack.shift().flush(function() {//render nested
+						options.fn && options.fn(options.target);//defer fn
+						fn         && fn();//queue fn						
+					});
 				});
 			};
 		}(this)));
@@ -221,24 +234,41 @@
 	 * Parses HTML snippet
 	 * 
 	 * @access public
-	 * @param string str
+	 * @param object|string options
 	 * @param function fn (optional, oncomplete)
 	 * @returns Lady (fluent interface)
 	 */
-	Lady.prototype.parse = function(str, fn) {
-		// Create target
-		var target = document.createElement('span');
-		target.className = 'lady-parse lady';
-		document.body.appendChild(target);
+	Lady.prototype.parse = function(options, fn) {
+		// Juggle parameters
+		if('object' !== typeof options) {//plain
+			options = {	html: options, fn: fn };
+		}
 
-		// Render
+		// Called in loop below to keep context
+		var clean = function(node) {
+			if((node.hasAttribute && node.hasAttribute('src')) || node.src) {
+				node.setAttribute('data-lady-src', node.getAttribute('src'));
+				node.removeAttribute('src');//reset
+			}
+			else {
+				node.setAttribute('data-lady-text', node.text);
+				node.text = '';//reset
+			}
+		};
+
+		// Enqueue
 		return this.defer({
 			fn:     function(el) {
-				document.body.removeChild(el);//remove from DOM
-				fn && fn(el);
+				// Clean scripts to avoid double execution
+				var i,
+				    script = el.getElementsByTagName('script');
+				for(i = 0; i < script.length; i += 1) {
+					clean(script[i]);
+				}
+				options.fn && options.fn(el);//parse fn
 			},
-			html:   str,
-			target: target
+			html:   options.html,
+			target: options.target
 		});
 	};
 
@@ -250,7 +280,7 @@
 	 * @returns void
 	 */
 	Lady.prototype.render = function(fn) {
-		this._queue.flush(fn);
+		this._stack[0].flush(fn);
 	};
 
 	/**
@@ -394,6 +424,7 @@
 				document.open    = _document.open;
 				document.write   = _document.write;
 				document.writeln = _document.writeln;
+				context._target.shift();
 		    };
 
 		// Overwrite native implementations
@@ -425,6 +456,7 @@
 		document.writeln = function() {//forward call to document.write
 			document.write([].slice.call(arguments, 0).join("\n") + "\n");//join argv
 		};
+		this._target.unshift(target);//set mock target
 
 		// Resource
 		if((script.hasAttribute && script.hasAttribute('src')) || script.src) {//external
@@ -481,6 +513,12 @@
 	 * @returns HTMLElement
 	 */
 	Lady.prototype._mock = function() {
+		// Nested call, use parent target
+		if(this._target[0]) {
+			return this._target[0];
+		}
+
+		// Create mock
 		var target;
 		if(this._loaded) {//use DOM
 			target = document.createElement('span');

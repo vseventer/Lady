@@ -4,14 +4,13 @@
 module('Lady (async)', {
 	setup: function() {
 		// Handle document.write to avoid breaking test suite
-		this.old = document.write;
 		document.write = function() { };
 
 		// Test object
 		this.lady   = new Lady();
 		this.length = (function(context) {//shortcut for ladys queue
 			return function() {
-				return context.lady._queue.length();
+				return context.lady._stack[0].length();
 			};
 		}(this));
 	}
@@ -66,64 +65,124 @@ test('Defer', function() {
 test('Parse', function() {
 	QUnit.stop(12);
 
-	this.lady.parse('foo', function(el) {
-		strictEqual(el.innerHTML.strip(), 'foo', 'Textnode');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   'foo',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), 'foo', 'Textnode');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<p></p>', function(el) {
-		strictEqual(el.innerHTML.strip(), '<p></p>', 'Node');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<p></p>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), '<p></p>', 'Node');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<p>foo</p>', function(el) {
-		strictEqual(el.innerHTML.strip(), '<p>foo</p>', 'Node with text');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<p>foo</p>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), '<p>foo</p>', 'Node with text');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('foo<p></p>', function(el) {
-		strictEqual(el.innerHTML.strip(), 'foo<p></p>', 'Sibling text- and node');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   'foo<p></p>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), 'foo<p></p>', 'Sibling text- and node');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<div></div><p>bar</p>', function(el) {
-		strictEqual(el.innerHTML.strip(), '<div></div><p>bar</p>', 'Sibling nodes');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<div></div><p>bar</p>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), '<div></div><p>bar</p>', 'Sibling nodes');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<p><small></small></p>', function(el) {
-		strictEqual(el.innerHTML.strip(), '<p><small></small></p>', 'Nested nodes');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<p><small></small></p>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), '<p><small></small></p>', 'Nested nodes');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<p>foo<small>bar</small>baz</p>', function(el) {
-		strictEqual(el.innerHTML.strip(), '<p>foo<small>bar</small>baz</p>', 'Nested nodes with text');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<p>foo<small>bar</small>baz</p>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), '<p>foo<small>bar</small>baz</p>', 'Nested nodes with text');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<script>document.write("foo");</script>', function(el) {
-		strictEqual(el.innerHTML.strip(), 'foo', 'Recursive');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<script>document.write("foo");</script>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), 'foo', 'Recursive');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<p><script>document.write("<small>foo</small>");</script></p>', function(el) {
-		strictEqual(el.innerHTML.strip(), '<p><small>foo</small></p>', 'Nested recursive');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<p><script>document.write("<small>foo</small>");</script></p>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), '<p><small>foo</small></p>', 'Nested recursive');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<script src="foo.js"></script>', function(el) {
-		strictEqual(el.innerHTML.strip(), 'bar', 'Include as node');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<script src="foo.js"></script>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), 'bar', 'Include as node');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<script src="foo.js"></script><script src="foo.js"></script>', function(el) {
-		strictEqual(el.innerHTML.strip(), 'barbar', 'Sibling includes');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<script src="foo.js"></script><script src="foo.js"></script>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), 'barbar', 'Sibling includes');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
-	this.lady.parse('<script src="baz.js"></script>', function(el) {
-		strictEqual(el.innerHTML.strip(), 'bar', 'Nested includes');
-		start();
+	this.lady.parse({
+		target: document.getElementById('qunit-fixture'),
+		html:   '<script src="baz.js"></script>',
+		fn:     function(el) {
+			strictEqual(el.innerHTML.strip(), 'bar', 'Nested includes');
+			el.innerHTML = '';//reset
+			start();
+		}
 	});
 
 	// Fire

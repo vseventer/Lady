@@ -10,6 +10,7 @@ By walking the DOM node by node, Lady is able to insert scripts at the designate
 ### Nesting
 Nesting of `document.write` is supported. Since Lady uses DOM manipulation techniques, they will be rendered where they are supposed to be. To make sure all deferreds are rendered in order, Lady uses an asynchronous queue.
 
+Deferreds can be nested. The asynchronous queue Lady uses is part of a level stack, which takes care of the nesting. 
 
 ## Support
 Lady supports `document.close`, `document.open`, `document.write` and `document.writeln`. Moreover, deferreds are rendered using speculative parsing. More about this can be read [here] (https://developer.mozilla.org/en/HTML/HTML5/HTML5_Parser#Performance_improvement_with_speculative_parsing).
@@ -50,10 +51,10 @@ lady.defer({ options });
 
 /*
 Arguments and options:
-target: target element, either a live HTMLElement, or id string,
 data:   URL or function to be executed asynchronously,
+fn:     oncomplete function, target element is passed as argument,
 html:   snippet of HTML to be parsed (deprecated),
-fn:     oncomplete function, target element is passed as argument.
+target: target element, either a live HTMLElement, or id string,
 */
 ```
 
@@ -63,13 +64,16 @@ For parsing HTML snippets, the following shortcut is available:
 
 ```javascript
 lady.parse(html, fn);
+lady.parse({ options });
 
-/*
-Arguments:
-html: HTML string
-fn:   oncomplete function, target element is passed as argument. Target element is detached from actual DOM.
+/* Arguments and options:
+fn:     oncomplete function, target element is passed as argument,
+html:   snippet of HTML to be parsed
+target: target element, either a live HTMLElement, or id string,
 */
 ```
+
+Both `target` and `fn` are optional. Lady will automatically clean all scripts in target, to avoid multiple execution when doing further manipulation.
 
 When the document is loaded, you want Lady to render all deferred items. This can be done by calling:
 
@@ -132,8 +136,12 @@ document.addEventListener('DOMContentLoaded', function() {
 ### Example 4: parsing AJAX responses
 ```javascript
 // Assume response resides in request.responseText
-lady.parse(request.responseText, function(el) {
-    document.getElementById('target').appendChild(el);
+lady.defer({
+    html:  request.responseText,
+    fn:    function(el) {
+        document.getElementById('target').appendChild(el);
+    },
+    clean: true//don't evaluate again when appending 
 }).render();
 ```
 
