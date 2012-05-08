@@ -1,6 +1,13 @@
 Lady
 ====
 
+--
+
+**May 8, 2012: Is this project still active?**
+Yes, although my main focus currently lies elsewhere. However, I can always find time for this project if necessary. Just drop me a message. 
+
+--
+
 Ads bring us money. Slow loading pages cost us money. Unfortunately, many ad providers still rely on the horribly outdated `document.write`, causing browsers to lock while loading.
 
 So, why not combine the best of both worlds? Fast and nonblocking loads, together with ads to make some money. Lady defers script execution, either explicitly or implicitly, rendering `document.writes` asynchronously after all other content has been loaded. `document.write` is no longer your enemy!
@@ -163,6 +170,6 @@ More examples can be found in the demos folder. Just play around with Lady yours
 
 
 ## License
-Since Lady is still in development, you should probably test all your ad code before pushing it live.
+Since Lady is still in development, you should probably test all your ad code before pushing it live. Make sure the contract with your ad provider allows you to defer ads. I am not responsible for any lawsuits and / or loss of income on your side directly or indirectly related to the usage of this script. 
 
 Lady is written by [Markably] (http://www.markably.com), and is available under the New BSD License.
